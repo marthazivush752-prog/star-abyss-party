@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星渊派对 - 关卡编辑器</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0a0e1a; color: #fff; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; overflow: hidden; }
+
+/* ===== 顶部工具栏 ===== */
+.toolbar {
+  height: 48px; background: #111827; border-bottom: 1px solid #1e293b;
+  display: flex; align-items: center; padding: 0 16px; gap: 8px; z-index: 100;
+}
+.toolbar-brand { color: #0ff; font-size: 16px; font-weight: bold; letter-spacing: 2px; margin-right: 16px; }
+.toolbar-brand span { color: #ff8800; font-size: 12px; }
+.tb-group { display: flex; gap: 4px; padding: 0 8px; border-left: 1px solid #1e293b; }
+.tb-btn {
+  padding: 6px 14px; font-size: 13px; color: #94a3b8; background: transparent;
+  border: 1px solid transparent; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.tb-btn:hover { color: #fff; background: #1e293b; border-color: #334155; }
+.tb-btn.active { color: #0ff; background: rgba(0,255,255,0.1); border-color: rgba(0,255,255,0.3); }
+.tb-btn.danger { color: #f87171; }
+.tb-btn.danger:hover { background: rgba(248,113,113,0.15); border-color: rgba(248,113,113,0.3); }
+.tb-btn.primary { color: #0ff; border-color: rgba(0,255,255,0.4); background: rgba(0,255,255,0.08); }
+.tb-btn.primary:hover { background: rgba(0,255,255,0.2); }
+.tb-btn.success { color: #4ade80; border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.08); }
+.tb-btn.success:hover { background: rgba(74,222,128,0.2); }
+.tb-spacer { flex: 1; }
+.tb-info { color: #64748b; font-size: 12px; }
+
+/* ===== 主布局 ===== */
+.main-layout { display: flex; height: calc(100vh - 48px); }
+
+/* ===== 左侧面板 ===== */
+.left-panel {
+  width: 280px; min-width: 280px; background: #111827;
+  border-right: 1px solid #1e293b; display: flex; flex-direction: column; overflow: hidden;
+}
+.panel-section { border-bottom: 1px solid #1e293b; }
+.panel-header {
+  padding: 10px 14px; font-size: 13px; color: #94a3b8; letter-spacing: 1px;
+  background: #0f172a; display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
+}
+.panel-header:hover { color: #fff; }
+.panel-header .arrow { transition: transform 0.2s; }
+.panel-header.collapsed .arrow { transform: rotate(-90deg); }
+.panel-body { padding: 10px 14px; max-height: 300px; overflow-y: auto; }
+.panel-body.collapsed { display: none; }
+
+/* 图层列表 */
+.layer-item {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+  border-radius: 6px; cursor: pointer; margin-bottom: 3px; transition: all 0.15s;
+}
+.layer-item:hover { background: #1e293b; }
+.layer-item.active { background: rgba(0,255,255,0.1); border: 1px solid rgba(0,255,255,0.3); }
+.layer-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.layer-name { font-size: 13px; flex: 1; }
+.layer-count { font-size: 11px; color: #64748b; }
+.layer-toggle { width: 20px; height: 20px; font-size: 14px; cursor: pointer; opacity: 0.6; text-align: center; }
+.layer-toggle:hover { opacity: 1; }
+.layer-toggle.hidden { opacity: 0.3; text-decoration: line-through; }
+
+/* 属性面板 */
+.prop-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.prop-label { font-size: 12px; color: #94a3b8; width: 50px; flex-shrink: 0; text-align: right; }
+.prop-input {
+  flex: 1; padding: 5px 8px; font-size: 13px; color: #fff; background: #1e293b;
+  border: 1px solid #334155; border-radius: 5px; outline: none; transition: border-color 0.2s;
+}
+.prop-input:focus { border-color: #0ff; }
+.prop-select {
+  flex: 1; padding: 5px 8px; font-size: 13px; color: #fff; background: #1e293b;
+  border: 1px solid #334155; border-radius: 5px; outline: none; cursor: pointer;
+}
+.prop-select:focus { border-color: #0ff; }
+.prop-color { width: 30px; height: 26px; border: 1px solid #334155; border-radius: 4px; cursor: pointer; background: none; }
+
+/* 放置工具面板 */
+.place-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.place-btn {
+  padding: 10px 8px; text-align: center; font-size: 12px; color: #94a3b8;
+  background: #0f172a; border: 1px solid #1e293b; border-radius: 8px;
+  cursor: pointer; transition: all 0.2s;
+}
+.place-btn:hover { color: #fff; border-color: #334155; background: #1e293b; }
+.place-btn.active { color: #0ff; border-color: rgba(0,255,255,0.5); background: rgba(0,255,255,0.08); }
+.place-btn .icon { font-size: 22px; display: block; margin-bottom: 4px; }
+
+/* ===== 中央画布 ===== */
+.canvas-area { flex: 1; position: relative; overflow: hidden; background: #080c18; }
+#editorCanvas { position: absolute; top: 0; left: 0; cursor: crosshair; }
+.canvas-overlay {
+  position: absolute; bottom: 12px; left: 12px; display: flex; gap: 8px; pointer-events: none;
+}
+.canvas-info {
+  background: rgba(0,0,0,0.7); padding: 4px 10px; border-radius: 5px;
+  font-size: 12px; color: #94a3b8; border: 1px solid #1e293b;
+}
+.canvas-info span { color: #0ff; }
+
+/* ===== 右侧面板 ===== */
+.right-panel {
+  width: 280px; min-width: 280px; background: #111827;
+  border-left: 1px solid #1e293b; display: flex; flex-direction: column; overflow-y: auto;
+}
+
+/* 对象列表 */
+.obj-list { max-height: 250px; overflow-y: auto; }
+.obj-item {
+  display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+  cursor: pointer; transition: all 0.15s; border-left: 3px solid transparent;
+}
+.obj-item:hover { background: #1e293b; }
+.obj-item.selected { background: rgba(0,255,255,0.08); border-left-color: #0ff; }
+.obj-icon { font-size: 16px; }
+.obj-name { font-size: 12px; flex: 1; color: #e2e8f0; }
+.obj-pos { font-size: 10px; color: #64748b; }
+.obj-del { font-size: 14px; cursor: pointer; color: #64748b; opacity: 0; transition: all 0.15s; }
+.obj-item:hover .obj-del { opacity: 1; }
+.obj-del:hover { color: #f87171; }
+
+/* 弹窗 */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6); z-index: 500; display: none;
+  align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+  padding: 24px; min-width: 400px; max-width: 600px; max-height: 80vh; overflow-y: auto;
+}
+.modal-title { font-size: 18px; color: #fff; margin-bottom: 16px; letter-spacing: 2px; }
+.modal textarea {
+  width: 100%; height: 300px; background: #0f172a; border: 1px solid #334155;
+  border-radius: 8px; color: #e2e8f0; font-family: 'Courier New', monospace; font-size: 13px;
+  padding: 12px; outline: none; resize: vertical;
+}
+.modal textarea:focus { border-color: #0ff; }
+.modal-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+
+/* 新建地图弹窗 */
+.new-map-options { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+.new-map-template {
+  padding: 14px; border: 2px solid #334155; border-radius: 10px;
+  cursor: pointer; transition: all 0.2s; background: #0f172a;
+}
+.new-map-template:hover { border-color: #0ff; background: rgba(0,255,255,0.05); }
+.new-map-template.selected { border-color: #0ff; background: rgba(0,255,255,0.1); }
+.new-map-template h4 { color: #0ff; font-size: 14px; margin-bottom: 4px; }
+.new-map-template p { color: #94a3b8; font-size: 12px; }
+
+/* 通知 */
+.toast {
+  position: fixed; top: 60px; right: 20px; z-index: 600;
+  padding: 10px 20px; border-radius: 8px; font-size: 14px;
+  background: rgba(0,255,255,0.15); border: 1px solid rgba(0,255,255,0.4); color: #0ff;
+  transform: translateX(120%); transition: transform 0.3s;
+}
+.toast.show { transform: translateX(0); }
+.toast.error { background: rgba(248,113,113,0.15); border-color: rgba(248,113,113,0.4); color: #f87171; }
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* 3D预览弹窗 */
+.preview-3d-container {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 400; display: none; background: #000;
+}
+.preview-3d-container.show { display: block; }
+.preview-3d-close {
+  position: absolute; top: 16px; right: 16px; z-index: 410;
+  padding: 8px 20px; font-size: 14px; color: #fff;
+  background: rgba(255,0,0,0.3); border: 1px solid rgba(255,0,0,0.5);
+  border-radius: 8px; cursor: pointer;
+}
+.preview-3d-close:hover { background: rgba(255,0,0,0.5); }
+.preview-3d-info {
+  position: absolute; bottom: 16px; left: 16px; z-index: 410;
+  color: #888; font-size: 13px; background: rgba(0,0,0,0.7); padding: 6px 12px; border-radius: 6px;
+}
+
+/* 实时预览容器 */
+.live-preview-container {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 380; display: none; background: #000;
+}
+.live-preview-container.show { display: flex; flex-direction: column; }
+.live-preview-toolbar {
+  height: 40px; background: #111827; border-bottom: 1px solid #1e293b;
+  display: flex; align-items: center; padding: 0 12px; gap: 8px;
+  flex-shrink: 0;
+}
+.live-preview-toolbar .lp-title {
+  color: #ff4444; font-size: 14px; font-weight: bold; letter-spacing: 2px;
+  display: flex; align-items: center; gap: 6px;
+}
+.live-preview-toolbar .lp-title::before {
+  content: ''; width: 8px; height: 8px; border-radius: 50%;
+  background: #ff4444; animation: liveDot 1s ease-in-out infinite;
+}
+@keyframes liveDot { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+.live-preview-toolbar .lp-info {
+  color: #64748b; font-size: 12px; flex: 1; text-align: center;
+}
+.live-preview-iframe {
+  flex: 1; border: none; width: 100%; background: #000;
+}
+
+/* 新增对象高亮脉冲 */
+@keyframes newObjPulse {
+  0%,100% { opacity: 0.5; } 50% { opacity: 1; }
+}
+
+/* 保存到游戏按钮悬浮效果 */
+#btnSaveToGame:hover {
+  background: rgba(255,136,0,0.25) !important;
+  border-color: #ff8800 !important;
+  box-shadow: 0 0 12px rgba(255,136,0,0.3);
+}
+</style>
+</head>
+<body>
+
+<!-- 顶部工具栏 -->
+<div class="toolbar">
+  <div class="toolbar-brand">星渊编辑器 <span>v1.1</span></div>
+  <div class="tb-group">
+    <button class="tb-btn success" id="btnNewMap">📄 新建</button>
+    <button class="tb-btn" id="btnSave">💾 保存</button>
+    <button class="tb-btn" id="btnLoad">📂 加载</button>
+  </div>
+  <div class="tb-group">
+    <button class="tb-btn active" id="toolSelect" title="选择 (V)">🔍 选择</button>
+    <button class="tb-btn" id="toolPlace" title="放置 (P)">📌 放置</button>
+    <button class="tb-btn" id="toolMove" title="移动 (M)">✋ 移动</button>
+    <button class="tb-btn" id="toolErase" title="删除 (D)">🗑️ 删除</button>
+  </div>
+  <div class="tb-group">
+    <button class="tb-btn" id="btnUndo" title="撤销 (Ctrl+Z)">↩️ 撤销</button>
+    <button class="tb-btn" id="btnRedo" title="重做 (Ctrl+Y)">↪️ 重做</button>
+  </div>
+  <div class="tb-group">
+    <button class="tb-btn primary" id="btnPreview3D">🎮 3D预览</button>
+    <button class="tb-btn primary" id="btnTestGame">▶️ 测试游戏</button>
+    <button class="tb-btn success" id="btnLivePreview">🔴 实时预览</button>
+  </div>
+  <div class="tb-spacer"></div>
+  <div class="tb-group">
+    <button class="tb-btn success" id="btnSaveToGame" style="color:#ff8800;border-color:rgba(255,136,0,0.5);background:rgba(255,136,0,0.1);" title="保存时会自动同步到游戏关卡">📥 保存到游戏</button>
+    <button class="tb-btn" id="btnExport">💾 导出</button>
+    <button class="tb-btn" id="btnImport">📂 导入</button>
+    <button class="tb-btn danger" id="btnClear">🗑 清空</button>
+  </div>
+  <div class="tb-info" id="statusInfo">就绪</div>
+</div>
+
+<div class="main-layout">
+  <!-- 左侧面板 -->
+  <div class="left-panel">
+    <div class="panel-section">
+      <div class="panel-header" id="layerHeader">
+        <span>📑 图层</span><span class="arrow">▼</span>
+      </div>
+      <div class="panel-body" id="layerList"></div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-header" id="placeHeader">
+        <span>🧱 放置物体</span><span class="arrow">▼</span>
+      </div>
+      <div class="panel-body">
+        <div class="place-tools" id="placeTools"></div>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-header" id="mapHeader">
+        <span>⚙️ 地图设置</span><span class="arrow">▼</span>
+      </div>
+      <div class="panel-body">
+        <div class="prop-row">
+          <span class="prop-label">名称</span>
+          <input class="prop-input" type="text" id="mapName" value="新关卡" maxlength="30">
+        </div>
+        <div class="prop-row">
+          <span class="prop-label">尺寸</span>
+          <input class="prop-input" type="number" id="mapSize" value="120" min="50" max="300">
+        </div>
+        <div class="prop-row">
+          <span class="prop-label">网格</span>
+          <input class="prop-input" type="number" id="gridSize" value="5" min="1" max="20">
+        </div>
+        <div class="prop-row" style="margin-top:8px;">
+          <label style="font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:6px;">
+            <input type="checkbox" id="snapGrid" checked> 吸附网格
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 中央画布 -->
+  <div class="canvas-area" id="canvasArea">
+    <canvas id="editorCanvas"></canvas>
+    <div class="canvas-overlay">
+      <div class="canvas-info">坐标: <span id="cursorPos">0, 0</span></div>
+      <div class="canvas-info">缩放: <span id="zoomLevel">100%</span></div>
+      <div class="canvas-info">物体: <span id="objCount">0</span></div>
+    </div>
+  </div>
+
+  <!-- 右侧面板 -->
+  <div class="right-panel">
+    <div class="panel-section">
+      <div class="panel-header" id="objListHeader">
+        <span>📋 对象列表</span><span class="arrow">▼</span>
+      </div>
+      <div class="panel-body obj-list" id="objectList">
+        <div style="color:#64748b;font-size:12px;text-align:center;padding:20px;">暂无对象</div>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-header" id="propsHeader">
+        <span>🔧 属性</span><span class="arrow">▼</span>
+      </div>
+      <div class="panel-body" id="propsPanel">
+        <div style="color:#64748b;font-size:12px;text-align:center;padding:20px;">选中物体查看属性</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 新建地图弹窗 -->
+<div class="modal-overlay" id="newMapModal">
+  <div class="modal">
+    <div class="modal-title">📄 新建关卡地图</div>
+    <div class="new-map-options">
+      <div class="new-map-template selected" data-template="empty" id="tplEmpty">
+        <h4>🗺️ 空白地图</h4>
+        <p>从零开始设计，仅包含边界围墙</p>
+      </div>
+      <div class="new-map-template" data-template="default" id="tplDefault">
+        <h4>🏗️ 默认关卡</h4>
+        <p>加载原版游戏的默认关卡布局</p>
+      </div>
+      <div class="new-map-template" data-template="arena" id="tplArena">
+        <h4>🏟️ 竞技场</h4>
+        <p>圆形对称竞技场布局，适合快节奏战斗</p>
+      </div>
+      <div class="new-map-template" data-template="maze" id="tplMaze">
+        <h4>🌀 迷宫</h4>
+        <p>复杂走廊和密室，适合探索和潜行</p>
+      </div>
+    </div>
+    <div class="prop-row">
+      <span class="prop-label">名称</span>
+      <input class="prop-input" type="text" id="newMapName" value="新关卡" maxlength="30">
+    </div>
+    <div class="prop-row">
+      <span class="prop-label">尺寸</span>
+      <input class="prop-input" type="number" id="newMapSize" value="120" min="50" max="300">
+    </div>
+    <div class="modal-actions">
+      <button class="tb-btn" id="btnNewMapCancel">取消</button>
+      <button class="tb-btn primary" id="btnNewMapConfirm">✅ 创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- 导出弹窗 -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <div class="modal-title">💾 导出关卡数据</div>
+    <textarea id="exportData" readonly></textarea>
+    <div class="modal-actions">
+      <button class="tb-btn" id="btnCopyExport">📋 复制</button>
+      <button class="tb-btn" id="btnDownloadExport">⬇️ 下载JSON</button>
+      <button class="tb-btn" id="btnCloseExport">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 导入弹窗 -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <div class="modal-title">📂 导入关卡数据</div>
+    <textarea id="importData" placeholder="粘贴关卡JSON数据..."></textarea>
+    <div class="modal-actions">
+      <button class="tb-btn" id="btnImportFile">📁 从文件</button>
+      <button class="tb-btn primary" id="btnDoImport">导入</button>
+      <button class="tb-btn" id="btnCloseImport">取消</button>
+    </div>
+    <input type="file" id="fileInput" accept=".json" style="display:none">
+  </div>
+</div>
+
+<!-- 3D预览 -->
+<div class="preview-3d-container" id="preview3d">
+  <canvas id="previewCanvas"></canvas>
+  <button class="preview-3d-close" id="btnClosePreview">✕ 关闭预览</button>
+  <div class="preview-3d-info">WASD移动 · 鼠标拖拽旋转 · 滚轮缩放</div>
+</div>
+
+<!-- 实时预览 -->
+<div class="live-preview-container" id="livePreviewContainer">
+  <div class="live-preview-toolbar">
+    <div class="lp-title">LIVE 实时预览</div>
+    <div class="lp-info">编辑器修改将自动同步到游戏 · 新增对象高亮显示</div>
+    <button class="tb-btn" id="btnSyncLive" style="color:#ff8800;">🔄 手动同步</button>
+    <button class="tb-btn danger" id="btnCloseLive">✕ 关闭预览</button>
+  </div>
+  <iframe class="live-preview-iframe" id="livePreviewFrame"></iframe>
+</div>
+
+<!-- 通知 -->
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ===== 编辑器核心状态 =====
+const EDITOR = {
+  mapSize: 120, gridSize: 5, mapName: '新关卡',
+  tool: 'select', placeType: null, placeSubtype: null,
+  zoom: 1, panX: 0, panY: 0,
+  selected: null, dragging: false, dragStart: null,
+  isPanning: false, panStart: null,
+  objects: [], undoStack: [], redoStack: [],
+  layers: {
+    buildings: { name: '建筑/障碍物', color: '#4488ff', icon: '🏗️', visible: true },
+    enemies:   { name: '敌人', color: '#ff4444', icon: '👾', visible: true },
+    loot:      { name: '物资投放点', color: '#00ff88', icon: '📦', visible: true },
+    spawn:     { name: '出生点', color: '#ffcc00', icon: '🚀', visible: true },
+    evac:      { name: '撤离点', color: '#ff8800', icon: '🌀', visible: true },
+    lights:    { name: '装饰灯', color: '#ff88ff', icon: '💡', visible: true },
+  }
+};
+
+const PLACE_DEFS = [
+  { id: 'wall', layer: 'buildings', icon: '🧱', name: '墙体', hasSize: true, defaults: { w: 10, h: 6, d: 2, material: 'wall' } },
+  { id: 'platform', layer: 'buildings', icon: '⬛', name: '平台', hasSize: true, defaults: { w: 8, h: 3, d: 8, material: 'accent' } },
+  { id: 'cover', layer: 'buildings', icon: '🪨', name: '掩体', hasSize: true, defaults: { w: 4, h: 3, d: 4, material: 'wall' } },
+  { id: 'sentinel', layer: 'enemies', icon: '🤖', name: '机械哨兵' },
+  { id: 'alien', layer: 'enemies', icon: '👽', name: '外星小怪' },
+  { id: 'elite', layer: 'enemies', icon: '💀', name: '精英守卫' },
+  { id: 'weapon_laser', layer: 'loot', icon: '🔫', name: '激光步枪', lootType: 'weapon', lootId: 'laser_rifle' },
+  { id: 'weapon_shotgun', layer: 'loot', icon: '💥', name: '电磁霰弹', lootType: 'weapon', lootId: 'em_shotgun' },
+  { id: 'weapon_blade', layer: 'loot', icon: '⚔️', name: '能量刃', lootType: 'weapon', lootId: 'energy_blade' },
+  { id: 'item_heal', layer: 'loot', icon: '💊', name: '治疗包', lootType: 'item', lootId: 'heal' },
+  { id: 'item_shield', layer: 'loot', icon: '🛡️', name: '能量盾', lootType: 'item', lootId: 'shield' },
+  { id: 'item_speed', layer: 'loot', icon: '⚡', name: '加速装置', lootType: 'item', lootId: 'speed' },
+  { id: 'item_grenade', layer: 'loot', icon: '💣', name: '引力手雷', lootType: 'item', lootId: 'grenade' },
+  { id: 'item_damage', layer: 'loot', icon: '🔥', name: '伤害增幅', lootType: 'item', lootId: 'damage_up' },
+  { id: 'item_stealth', layer: 'loot', icon: '👻', name: '隐身装置', lootType: 'item', lootId: 'stealth' },
+  { id: 'fragment', layer: 'loot', icon: '💎', name: '能量碎片', lootType: 'fragment' },
+  { id: 'spawn_point', layer: 'spawn', icon: '🚀', name: '出生点' },
+  { id: 'evac_point', layer: 'evac', icon: '🌀', name: '撤离点' },
+  { id: 'light', layer: 'lights', icon: '💡', name: '装饰灯', hasColor: true, defaults: { lightColor: '#00ffff' } },
+];
+
+const canvas = document.getElementById('editorCanvas');
+const ctx = canvas.getContext('2d');
+
+// ===== 初始化 =====
+function init() {
+  resizeCanvas();
+  buildLayerUI();
+  buildPlaceToolsUI();
+  loadDefaultLevel();
+  redraw();
+  bindEvents();
+}
+
+function resizeCanvas() {
+  const area = document.getElementById('canvasArea');
+  canvas.width = area.clientWidth;
+  canvas.height = area.clientHeight;
+}
+
+// ===== 图层UI =====
+function buildLayerUI() {
+  const el = document.getElementById('layerList');
+  el.innerHTML = '';
+  Object.entries(EDITOR.layers).forEach(([key, layer]) => {
+    const count = EDITOR.objects.filter(o => o.layer === key).length;
+    const div = document.createElement('div');
+    div.className = 'layer-item';
+    div.innerHTML = `
+      <div class="layer-dot" style="background:${layer.color}"></div>
+      <span class="layer-name">${layer.icon} ${layer.name}</span>
+      <span class="layer-count">${count}</span>
+      <span class="layer-toggle ${layer.visible ? '' : 'hidden'}" data-layer="${key}">${layer.visible ? '👁' : '👁'}</span>
+    `;
+    div.querySelector('.layer-toggle').addEventListener('click', function(e) {
+      e.stopPropagation();
+      toggleLayer(key);
+    });
+    div.addEventListener('click', function() { filterByLayer(key); });
+    el.appendChild(div);
+  });
+}
+
+function toggleLayer(key) {
+  EDITOR.layers[key].visible = !EDITOR.layers[key].visible;
+  buildLayerUI(); redraw();
+}
+
+function filterByLayer(key) {
+  EDITOR.selected = null;
+  updateObjectList(); updatePropsPanel(); redraw();
+}
+
+// ===== 放置工具UI =====
+function buildPlaceToolsUI() {
+  const el = document.getElementById('placeTools');
+  el.innerHTML = '';
+  PLACE_DEFS.forEach(def => {
+    const btn = document.createElement('div');
+    btn.className = 'place-btn';
+    btn.id = 'place_' + def.id;
+    btn.innerHTML = `<span class="icon">${def.icon}</span>${def.name}`;
+    btn.addEventListener('click', function() { selectPlaceTool(def.id); });
+    el.appendChild(btn);
+  });
+}
+
+function selectPlaceTool(id) {
+  const def = PLACE_DEFS.find(d => d.id === id);
+  if (!def) return;
+  EDITOR.placeType = id;
+  EDITOR.tool = 'place';
+  updateToolButtons();
+  document.querySelectorAll('.place-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('place_' + id);
+  if (btn) btn.classList.add('active');
+  setStatus('放置模式: ' + def.icon + ' ' + def.name);
+}
+
+// ===== 工具切换 =====
+function setTool(tool) {
+  EDITOR.tool = tool;
+  if (tool !== 'place') {
+    EDITOR.placeType = null;
+    document.querySelectorAll('.place-btn').forEach(b => b.classList.remove('active'));
+  }
+  updateToolButtons();
+  const names = { select: '选择', place: '放置', move: '移动', erase: '删除' };
+  setStatus(names[tool] + '模式');
+  canvas.style.cursor = tool === 'erase' ? 'not-allowed' : tool === 'move' ? 'grab' : tool === 'place' ? 'crosshair' : 'default';
+}
+
+function updateToolButtons() {
+  ['Select', 'Place', 'Move', 'Erase'].forEach(t => {
+    const btn = document.getElementById('tool' + t);
+    if (btn) btn.classList.toggle('active', EDITOR.tool === t.toLowerCase());
+  });
+}
+
+// ===== 坐标转换 =====
+function screenToWorld(sx, sy) {
+  const cx = canvas.width / 2, cy = canvas.height / 2;
+  return { x: (sx - cx - EDITOR.panX) / EDITOR.zoom, z: (sy - cy - EDITOR.panY) / EDITOR.zoom };
+}
+function worldToScreen(wx, wz) {
+  const cx = canvas.width / 2, cy = canvas.height / 2;
+  return { x: wx * EDITOR.zoom + cx + EDITOR.panX, y: wz * EDITOR.zoom + cy + EDITOR.panY };
+}
+function snapToGrid(val) {
+  if (!document.getElementById('snapGrid').checked) return val;
+  const g = EDITOR.gridSize;
+  return Math.round(val / g) * g;
+}
+
+// ===== 绘制 =====
+function redraw() {
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#080c18'; ctx.fillRect(0, 0, w, h);
+  drawGrid();
+  const ms = EDITOR.mapSize;
+  const tl = worldToScreen(-ms, -ms), br = worldToScreen(ms, ms);
+  ctx.strokeStyle = 'rgba(0,255,255,0.3)'; ctx.lineWidth = 2;
+  ctx.setLineDash([8, 4]); ctx.strokeRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y); ctx.setLineDash([]);
+  const origin = worldToScreen(0, 0);
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(origin.x, 0); ctx.lineTo(origin.x, h);
+  ctx.moveTo(0, origin.y); ctx.lineTo(w, origin.y); ctx.stroke();
+  EDITOR.objects.forEach((obj, i) => {
+    if (!EDITOR.layers[obj.layer] || !EDITOR.layers[obj.layer].visible) return;
+    drawObject(obj, i);
+  });
+  document.getElementById('objCount').textContent = EDITOR.objects.length;
+  document.getElementById('zoomLevel').textContent = Math.round(EDITOR.zoom * 100) + '%';
+}
+
+function drawGrid() {
+  const g = EDITOR.gridSize, ms = EDITOR.mapSize;
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+  for (let x = -ms; x <= ms; x += g) {
+    const s = worldToScreen(x, -ms), e = worldToScreen(x, ms);
+    ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke();
+  }
+  for (let z = -ms; z <= ms; z += g) {
+    const s = worldToScreen(-ms, z), e = worldToScreen(ms, z);
+    ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke();
+  }
+}
+
+function drawObject(obj, idx) {
+  const layerInfo = EDITOR.layers[obj.layer];
+  const isSelected = EDITOR.selected === idx;
+  const isNew = obj._isNew;  // 新增对象高亮标记
+  const def = PLACE_DEFS.find(d => d.id === obj.type);
+  // 高亮颜色计算
+  const pulseAlpha = isNew ? (0.5 + 0.5 * Math.sin(Date.now() * 0.005)) : 0;
+  if (obj.layer === 'buildings') {
+    const halfW = (obj.w || 10) / 2, halfD = (obj.d || 2) / 2;
+    const tl = worldToScreen(obj.x - halfW, obj.z - halfD);
+    const br = worldToScreen(obj.x + halfW, obj.z + halfD);
+    const color = obj.material === 'accent' ? '#0a4a8a' : obj.material === 'danger' ? '#4a2a2a' : '#2a3a5a';
+    ctx.fillStyle = isNew ? `rgba(255,60,60,${0.4 + pulseAlpha * 0.4})` : color + 'cc';
+    ctx.fillRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
+    ctx.strokeStyle = isNew ? `rgba(255,100,100,${0.6 + pulseAlpha * 0.4})` : isSelected ? '#0ff' : layerInfo.color + '88';
+    ctx.lineWidth = isNew ? 3 : isSelected ? 2 : 1;
+    ctx.strokeRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
+    // 高亮外发光
+    if (isNew) {
+      ctx.shadowColor = '#ff4444'; ctx.shadowBlur = 12 + pulseAlpha * 8;
+      ctx.strokeRect(tl.x, tl.y, br.x - tl.x, br.y - tl.y);
+      ctx.shadowBlur = 0;
+    }
+    const center = worldToScreen(obj.x, obj.z);
+    ctx.fillStyle = '#fff8';
+    ctx.font = `${Math.max(10, 12 * EDITOR.zoom)}px sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(`h:${obj.h || 6}`, center.x, center.y);
+  } else {
+    const pos = worldToScreen(obj.x, obj.z);
+    const r = Math.max(8, 14 * EDITOR.zoom);
+    ctx.beginPath(); ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+    if (isNew) {
+      ctx.fillStyle = `rgba(255,60,60,${0.3 + pulseAlpha * 0.3})`;
+      ctx.fill();
+      ctx.strokeStyle = `rgba(255,100,100,${0.6 + pulseAlpha * 0.4})`;
+      ctx.lineWidth = 3; ctx.stroke();
+      // 外发光
+      ctx.shadowColor = '#ff4444'; ctx.shadowBlur = 12 + pulseAlpha * 8;
+      ctx.beginPath(); ctx.arc(pos.x, pos.y, r + 2, 0, Math.PI * 2); ctx.stroke();
+      ctx.shadowBlur = 0;
+    } else {
+      ctx.fillStyle = isSelected ? 'rgba(0,255,255,0.3)' : layerInfo.color + '33'; ctx.fill();
+      ctx.strokeStyle = isSelected ? '#0ff' : layerInfo.color + '88';
+      ctx.lineWidth = isSelected ? 2 : 1; ctx.stroke();
+    }
+    ctx.fillStyle = '#fff';
+    ctx.font = `${Math.max(12, 16 * EDITOR.zoom)}px sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(def ? def.icon : '?', pos.x, pos.y);
+  }
+  if ((isSelected || isNew) && def) {
+    const pos = worldToScreen(obj.x, obj.z);
+    ctx.fillStyle = isNew ? '#ff6666' : '#0ff'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+    const label = isNew ? '★ ' + def.name + ' (新增)' : def.name;
+    ctx.fillText(label, pos.x, pos.y - (obj.layer === 'buildings' ? ((obj.d || 2) / 2 * EDITOR.zoom + 14) : 22));
+  }
+}
+
+// ===== 事件绑定 =====
+function bindEvents() {
+  window.addEventListener('resize', () => { resizeCanvas(); redraw(); });
+  canvas.addEventListener('mousedown', onMouseDown);
+  canvas.addEventListener('mousemove', onMouseMove);
+  canvas.addEventListener('mouseup', onMouseUp);
+  canvas.addEventListener('wheel', onWheel, { passive: false });
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
+  window.addEventListener('keydown', onKeyDown);
+
+  // 工具栏按钮 - 使用 addEventListener 而非 onclick
+  document.getElementById('toolSelect').addEventListener('click', () => setTool('select'));
+  document.getElementById('toolPlace').addEventListener('click', () => setTool('place'));
+  document.getElementById('toolMove').addEventListener('click', () => setTool('move'));
+  document.getElementById('toolErase').addEventListener('click', () => setTool('erase'));
+  document.getElementById('btnUndo').addEventListener('click', undo);
+  document.getElementById('btnRedo').addEventListener('click', redo);
+  document.getElementById('btnPreview3D').addEventListener('click', preview3D);
+  document.getElementById('btnTestGame').addEventListener('click', testInGame);
+  document.getElementById('btnExport').addEventListener('click', showExportModal);
+  document.getElementById('btnImport').addEventListener('click', showImportModal);
+  document.getElementById('btnClear').addEventListener('click', clearAll);
+  document.getElementById('btnNewMap').addEventListener('click', showNewMapModal);
+  document.getElementById('btnSave').addEventListener('click', saveToLocal);
+  document.getElementById('btnLoad').addEventListener('click', loadFromLocal);
+  document.getElementById('btnSaveToGame').addEventListener('click', saveToGameLevels);
+  document.getElementById('btnLivePreview').addEventListener('click', openLivePreview);
+  document.getElementById('btnCloseLive').addEventListener('click', closeLivePreview);
+  document.getElementById('btnSyncLive').addEventListener('click', syncToLivePreview);
+
+  // 弹窗按钮
+  document.getElementById('btnNewMapCancel').addEventListener('click', () => closeModal('newMapModal'));
+  document.getElementById('btnNewMapConfirm').addEventListener('click', createNewMap);
+  document.getElementById('btnCopyExport').addEventListener('click', copyExport);
+  document.getElementById('btnDownloadExport').addEventListener('click', downloadExport);
+  document.getElementById('btnCloseExport').addEventListener('click', () => closeModal('exportModal'));
+  document.getElementById('btnImportFile').addEventListener('click', () => document.getElementById('fileInput').click());
+  document.getElementById('btnDoImport').addEventListener('click', doImport);
+  document.getElementById('btnCloseImport').addEventListener('click', () => closeModal('importModal'));
+  document.getElementById('btnClosePreview').addEventListener('click', closePreview3D);
+  document.getElementById('fileInput').addEventListener('change', loadFile);
+
+  // 新建地图模板选择
+  document.querySelectorAll('.new-map-template').forEach(tpl => {
+    tpl.addEventListener('click', function() {
+      document.querySelectorAll('.new-map-template').forEach(t => t.classList.remove('selected'));
+      this.classList.add('selected');
+    });
+  });
+
+  // 面板折叠
+  ['layerHeader','placeHeader','mapHeader','objListHeader','propsHeader'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function() { togglePanel(this); });
+  });
+
+  // 地图设置变化
+  document.getElementById('mapSize').addEventListener('change', onMapSizeChange);
+  document.getElementById('gridSize').addEventListener('change', () => redraw());
+  document.getElementById('mapName').addEventListener('change', function() { EDITOR.mapName = this.value; });
+
+  // 点击modal遮罩关闭
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
+  });
+}
+
+function onMouseDown(e) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+  if (e.button === 1 || e.button === 2) {
+    EDITOR.isPanning = true;
+    EDITOR.panStart = { x: e.clientX - EDITOR.panX, y: e.clientY - EDITOR.panY };
+    canvas.style.cursor = 'grabbing'; return;
+  }
+  const world = screenToWorld(sx, sy);
+  if (EDITOR.tool === 'place' && EDITOR.placeType) {
+    placeObject(world.x, world.z);
+  } else if (EDITOR.tool === 'select' || EDITOR.tool === 'move') {
+    const hit = hitTest(sx, sy);
+    EDITOR.selected = hit;
+    if (hit !== null && EDITOR.tool === 'move') {
+      EDITOR.dragging = true; EDITOR.dragStart = world; canvas.style.cursor = 'grabbing';
+    }
+    updateObjectList(); updatePropsPanel(); redraw();
+  } else if (EDITOR.tool === 'erase') {
+    const hit = hitTest(sx, sy);
+    if (hit !== null) {
+      saveUndo(); EDITOR.objects.splice(hit, 1); EDITOR.selected = null;
+      updateObjectList(); updatePropsPanel(); buildLayerUI(); redraw();
+      showToast('已删除对象');
+    }
+  }
+}
+
+function onMouseMove(e) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+  const world = screenToWorld(sx, sy);
+  document.getElementById('cursorPos').textContent = Math.round(world.x) + ', ' + Math.round(world.z);
+  if (EDITOR.isPanning) {
+    EDITOR.panX = e.clientX - EDITOR.panStart.x;
+    EDITOR.panY = e.clientY - EDITOR.panStart.y;
+    redraw(); return;
+  }
+  if (EDITOR.dragging && EDITOR.selected !== null) {
+    const obj = EDITOR.objects[EDITOR.selected];
+    obj.x = snapToGrid(world.x); obj.z = snapToGrid(world.z);
+    updatePropsPanel(); redraw();
+  }
+}
+
+function onMouseUp(e) {
+  if (EDITOR.isPanning) {
+    EDITOR.isPanning = false;
+    canvas.style.cursor = EDITOR.tool === 'move' ? 'grab' : EDITOR.tool === 'erase' ? 'not-allowed' : EDITOR.tool === 'place' ? 'crosshair' : 'default';
+  }
+  if (EDITOR.dragging) { EDITOR.dragging = false; canvas.style.cursor = 'grab'; saveUndo(); }
+}
+
+function onWheel(e) {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const oldZoom = EDITOR.zoom;
+  EDITOR.zoom = Math.max(0.1, Math.min(10, EDITOR.zoom * (e.deltaY > 0 ? 0.9 : 1.1)));
+  const ratio = EDITOR.zoom / oldZoom;
+  EDITOR.panX = mx - (mx - EDITOR.panX) * ratio;
+  EDITOR.panY = my - (my - EDITOR.panY) * ratio;
+  redraw();
+}
+
+function onKeyDown(e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'v' || e.key === 'V') setTool('select');
+  if (e.key === 'p' || e.key === 'P') setTool('place');
+  if (e.key === 'm' || e.key === 'M') setTool('move');
+  if (e.key === 'd' || e.key === 'D') setTool('erase');
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (EDITOR.selected !== null) {
+      saveUndo(); EDITOR.objects.splice(EDITOR.selected, 1); EDITOR.selected = null;
+      updateObjectList(); updatePropsPanel(); buildLayerUI(); redraw();
+    }
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redo(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'd') { e.preventDefault(); if (EDITOR.selected !== null) duplicateSelected(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); showNewMapModal(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveToLocal(); }
+}
+
+// ===== 碰撞检测 =====
+function hitTest(sx, sy) {
+  for (let i = EDITOR.objects.length - 1; i >= 0; i--) {
+    const obj = EDITOR.objects[i];
+    if (!EDITOR.layers[obj.layer] || !EDITOR.layers[obj.layer].visible) continue;
+    if (obj.layer === 'buildings') {
+      const halfW = (obj.w || 10) / 2, halfD = (obj.d || 2) / 2;
+      const tl = worldToScreen(obj.x - halfW, obj.z - halfD);
+      const br = worldToScreen(obj.x + halfW, obj.z + halfD);
+      if (sx >= tl.x && sx <= br.x && sy >= tl.y && sy <= br.y) return i;
+    } else {
+      const pos = worldToScreen(obj.x, obj.z);
+      const r = Math.max(8, 14 * EDITOR.zoom);
+      const dx = sx - pos.x, dy = sy - pos.y;
+      if (dx * dx + dy * dy <= r * r) return i;
+    }
+  }
+  return null;
+}
+
+// ===== 放置对象 =====
+function placeObject(wx, wz) {
+  const def = PLACE_DEFS.find(d => d.id === EDITOR.placeType);
+  if (!def) return;
+  saveUndo();
+  const obj = { type: def.id, layer: def.layer, x: snapToGrid(wx), z: snapToGrid(wz), _isNew: true };
+  if (def.defaults) Object.assign(obj, JSON.parse(JSON.stringify(def.defaults)));
+  if (def.lootType) { obj.lootType = def.lootType; obj.lootId = def.lootId || null; }
+  if (def.hasSize && !obj.w) { obj.w = 10; obj.h = 6; obj.d = 2; obj.material = 'wall'; }
+  if (!obj.y) obj.y = 0;
+  EDITOR.objects.push(obj);
+  EDITOR.selected = EDITOR.objects.length - 1;
+  updateObjectList(); updatePropsPanel(); buildLayerUI(); redraw();
+  showToast(def.icon + ' 已放置 ' + def.name);
+  // 实时预览模式：自动同步到游戏
+  syncToLivePreview();
+  // 新增对象高亮动画持续刷新
+  startNewObjAnimation();
+}
+
+// ===== 对象列表 =====
+function updateObjectList() {
+  const el = document.getElementById('objectList');
+  if (EDITOR.objects.length === 0) {
+    el.innerHTML = '<div style="color:#64748b;font-size:12px;text-align:center;padding:20px;">暂无对象</div>';
+    return;
+  }
+  el.innerHTML = '';
+  EDITOR.objects.forEach((obj, i) => {
+    const def = PLACE_DEFS.find(d => d.id === obj.type);
+    const div = document.createElement('div');
+    div.className = 'obj-item' + (EDITOR.selected === i ? ' selected' : '');
+    div.innerHTML = `
+      <span class="obj-icon">${def ? def.icon : '?'}</span>
+      <span class="obj-name">${def ? def.name : obj.type}</span>
+      <span class="obj-pos">(${Math.round(obj.x)},${Math.round(obj.z)})</span>
+      <span class="obj-del" data-idx="${i}">✕</span>
+    `;
+    div.querySelector('.obj-del').addEventListener('click', function(e) {
+      e.stopPropagation(); deleteObj(parseInt(this.dataset.idx));
+    });
+    div.addEventListener('click', function() {
+      EDITOR.selected = i; updateObjectList(); updatePropsPanel(); redraw();
+    });
+    el.appendChild(div);
+  });
+}
+
+function deleteObj(i) {
+  saveUndo(); EDITOR.objects.splice(i, 1);
+  if (EDITOR.selected === i) EDITOR.selected = null;
+  else if (EDITOR.selected > i) EDITOR.selected--;
+  updateObjectList(); updatePropsPanel(); buildLayerUI(); redraw();
+}
+
+// ===== 属性面板 =====
+function updatePropsPanel() {
+  const el = document.getElementById('propsPanel');
+  if (EDITOR.selected === null || !EDITOR.objects[EDITOR.selected]) {
+    el.innerHTML = '<div style="color:#64748b;font-size:12px;text-align:center;padding:20px;">选中物体查看属性</div>';
+    return;
+  }
+  const obj = EDITOR.objects[EDITOR.selected];
+  const def = PLACE_DEFS.find(d => d.id === obj.type);
+  let html = `<div style="font-size:14px;color:#fff;margin-bottom:12px;">${def ? def.icon : ''} ${def ? def.name : obj.type}</div>`;
+  html += propRow('X', 'number', 'x', obj.x);
+  html += propRow('Z', 'number', 'z', obj.z);
+  if (obj.layer === 'buildings') {
+    html += propRow('宽 W', 'number', 'w', obj.w || 10);
+    html += propRow('高 H', 'number', 'h', obj.h || 6);
+    html += propRow('深 D', 'number', 'd', obj.d || 2);
+    html += propRow('Y偏移', 'number', 'y', obj.y || 0);
+    html += `<div class="prop-row"><span class="prop-label">材质</span>
+      <select class="prop-select" id="propMaterial">
+        <option value="wall" ${obj.material === 'wall' ? 'selected' : ''}>普通墙体</option>
+        <option value="accent" ${obj.material === 'accent' ? 'selected' : ''}>科技蓝</option>
+        <option value="danger" ${obj.material === 'danger' ? 'selected' : ''}>危险红</option>
+      </select></div>`;
+  }
+  if (obj.layer === 'lights' && def && def.hasColor) {
+    html += `<div class="prop-row"><span class="prop-label">颜色</span>
+      <input class="prop-color" type="color" id="propLightColor" value="${obj.lightColor || '#00ffff'}"></div>`;
+  }
+  html += `<div style="margin-top:12px;display:flex;gap:6px;">
+    <button class="tb-btn" id="propDuplicate" style="flex:1;">📋 复制</button>
+    <button class="tb-btn danger" id="propDelete" style="flex:1;">🗑 删除</button>
+  </div>`;
+  el.innerHTML = html;
+
+  // Bind prop events
+  el.querySelectorAll('.prop-input').forEach(input => {
+    input.addEventListener('change', function() {
+      const key = this.dataset.key;
+      const val = this.type === 'number' ? parseFloat(this.value) : this.value;
+      setProp(key, val);
+    });
+  });
+  const matSel = document.getElementById('propMaterial');
+  if (matSel) matSel.addEventListener('change', function() { setProp('material', this.value); });
+  const colorInput = document.getElementById('propLightColor');
+  if (colorInput) colorInput.addEventListener('change', function() { setProp('lightColor', this.value); });
+  const dupBtn = document.getElementById('propDuplicate');
+  if (dupBtn) dupBtn.addEventListener('click', duplicateSelected);
+  const delBtn = document.getElementById('propDelete');
+  if (delBtn) delBtn.addEventListener('click', function() { if (EDITOR.selected !== null) deleteObj(EDITOR.selected); });
+}
+
+function propRow(label, type, key, value) {
+  return `<div class="prop-row"><span class="prop-label">${label}</span>
+    <input class="prop-input" type="${type}" value="${value}" step="${type === 'number' ? 1 : ''}" data-key="${key}"></div>`;
+}
+
+function setProp(key, value) {
+  if (EDITOR.selected === null) return;
+  saveUndo();
+  EDITOR.objects[EDITOR.selected][key] = value;
+  updateObjectList(); redraw();
+}
+
+function duplicateSelected() {
+  if (EDITOR.selected === null) return;
+  saveUndo();
+  const clone = JSON.parse(JSON.stringify(EDITOR.objects[EDITOR.selected]));
+  clone.x += 5; clone.z += 5;
+  EDITOR.objects.push(clone);
+  EDITOR.selected = EDITOR.objects.length - 1;
+  updateObjectList(); updatePropsPanel(); buildLayerUI(); redraw();
+  showToast('已复制对象');
+}
+
+// ===== 撤销/重做 =====
+function saveUndo() {
+  EDITOR.undoStack.push(JSON.stringify(EDITOR.objects));
+  if (EDITOR.undoStack.length > 50) EDITOR.undoStack.shift();
+  EDITOR.redoStack = [];
+}
+function undo() {
+  if (EDITOR.undoStack.length === 0) return;
+  EDITOR.redoStack.push(JSON.stringify(EDITOR.objects));
+  EDITOR.objects = JSON.parse(EDITOR.undoStack.pop());
+  EDITOR.selected = null;
+  updateObjectList(); updatePropsPanel(); buildLayerUI(); redraw();
+  showToast('↩ 已撤销');
+}
+function redo() {
+  if (EDITOR.redoStack.length === 0) return;
+  EDITOR.undoStack.push(JSON.stringify(EDITOR.objects));
+  EDITOR.objects = JSON.parse(EDITOR.redoStack.pop());
+  EDITOR.selected = null;
+  updateObjectList(); updatePropsPanel(); buildLayerUI(); redraw();
+  showToast('↪ 已重做');
+}
+
+// ===== 新建地图 =====
+function showNewMapModal() {
+  document.getElementById('newMapName').value = '新关卡';
+  document.getElementById('newMapSize').value = '120';
+  document.querySelectorAll('.new-map-template').forEach(t => t.classList.remove('selected'));
+  document.getElementById('tplEmpty').classList.add('selected');
+  document.getElementById('newMapModal').classList.add('show');
+}
+
+function createNewMap() {
+  const name = document.getElementById('newMapName').value || '新关卡';
+  const size = parseInt(document.getElementById('newMapSize').value) || 120;
+  const selected = document.querySelector('.new-map-template.selected');
+  const template = selected ? selected.dataset.template : 'empty';
+
+  saveUndo();
+  EDITOR.objects = [];
+  EDITOR.mapSize = size;
+  EDITOR.mapName = name;
+  EDITOR.selected = null;
+  document.getElementById('mapSize').value = size;
+  document.getElementById('mapName').value = name;
+
+  if (template === 'default') {
+    loadDefaultLevel();
+  } else if (template === 'arena') {
+    generateArenaTemplate(size);
+  } else if (template === 'maze') {
+    generateMazeTemplate(size);
+  } else {
+    // 空白地图 - 仅四面围墙
+    generateEmptyTemplate(size);
+  }
+
+  closeModal('newMapModal');
+  updateObjectList(); updatePropsPanel(); buildLayerUI(); redraw();
+  showToast('✅ 已创建新关卡: ' + name);
+}
+
+function generateEmptyTemplate(ms) {
+  // 四面围墙
+  EDITOR.objects.push({ type: 'wall', layer: 'buildings', x: 0, z: -ms, y: 4, w: ms * 2, h: 8, d: 2, material: 'wall' });
+  EDITOR.objects.push({ type: 'wall', layer: 'buildings', x: 0, z: ms, y: 4, w: ms * 2, h: 8, d: 2, material: 'wall' });
+  EDITOR.objects.push({ type: 'wall', layer: 'buildings', x: -ms, z: 0, y: 4, w: 2, h: 8, d: ms * 2, material: 'wall' });
+  EDITOR.objects.push({ type: 'wall', layer: 'buildings', x: ms, z: 0, y: 4, w: 2, h: 8, d: ms * 2, material: 'wall' });
+  // 出生点
+  EDITOR.objects.push({ type: 'spawn_point', layer: 'spawn', x: ms - 10, z: ms - 10 });
+  EDITOR.objects.push({ type: 'spawn_point', layer: 'spawn', x: -ms + 10, z: -ms + 10 });
+  // 撤离点
+  EDITOR.objects.push({ type: 'evac_point', layer: 'evac', x: 0, z: 0 });
+}
+
+function generateArenaTemplate(ms) {
+  generateEmptyTemplate(ms);
+  // 中央平台
+  EDITOR.objects.push({ type: 'platform', layer: 'buildings', x: 0, z: 0, y: 2, w: 15, h: 4, d: 15, material: 'accent' });
+  // 4个对称掩体
+  const r = ms * 0.4;
+  [0, 90, 180, 270].forEach(deg => {
+    const rad = deg * Math.PI / 180;
+    EDITOR.objects.push({ type: 'cover', layer: 'buildings', x: Math.round(Math.cos(rad) * r), z: Math.round(Math.sin(rad) * r), y: 1.5, w: 5, h: 3, d: 5, material: 'wall' });
+  });
+  // 8个小掩体
+  [45, 135, 225, 315].forEach(deg => {
+    const rad = deg * Math.PI / 180;
+    const r2 = ms * 0.6;
+    EDITOR.objects.push({ type: 'cover', layer: 'buildings', x: Math.round(Math.cos(rad) * r2), z: Math.round(Math.sin(rad) * r2), y: 1.5, w: 3, h: 3, d: 3, material: 'wall' });
+  });
+  // 敌人
+  [[-30, 0], [30, 0], [0, -30], [0, 30]].forEach(([x, z]) => {
+    EDITOR.objects.push({ type: 'sentinel', layer: 'enemies', x, z });
+  });
+  // 物资
+  [[-20, -20], [20, 20], [-20, 20], [20, -20]].forEach(([x, z]) => {
+    EDITOR.objects.push({ type: 'weapon_laser', layer: 'loot', x, z, lootType: 'weapon', lootId: 'laser_rifle' });
+  });
+  EDITOR.objects.push({ type: 'item_heal', layer: 'loot', x: 0, z: 10, lootType: 'item', lootId: 'heal' });
+  EDITOR.objects.push({ type: 'item_shield', layer: 'loot', x: 0, z: -10, lootType: 'item', lootId: 'shield' });
+}
+
+function generateMazeTemplate(ms) {
+  generateEmptyTemplate(ms);
+  const half = ms * 0.6;
+  // 水平墙
+  for (let i = -2; i <= 2; i++) {
+    const zPos = i * (half / 2.5);
+    const gap = (i % 2 === 0) ? -half * 0.3 : half * 0.3;
+    EDITOR.objects.push({ type: 'wall', layer: 'buildings', x: gap, z: Math.round(zPos), y: 3, w: Math.round(half * 1.2), h: 6, d: 2, material: 'wall' });
+  }
+  // 垂直墙
+  for (let i = -2; i <= 2; i++) {
+    const xPos = i * (half / 2.5);
+    const gap = (i % 2 === 0) ? half * 0.3 : -half * 0.3;
+    EDITOR.objects.push({ type: 'wall', layer: 'buildings', x: Math.round(xPos), z: gap, y: 3, w: 2, h: 6, d: Math.round(half * 1.2), material: i % 2 === 0 ? 'wall' : 'danger' });
+  }
+  // 敌人散布
+  for (let i = 0; i < 8; i++) {
+    const x = Math.round((Math.random() - 0.5) * ms);
+    const z = Math.round((Math.random() - 0.5) * ms);
+    EDITOR.objects.push({ type: Math.random() > 0.5 ? 'sentinel' : 'alien', layer: 'enemies', x, z });
+  }
+  // 物资散布
+  for (let i = 0; i < 6; i++) {
+    const x = Math.round((Math.random() - 0.5) * ms * 0.8);
+    const z = Math.round((Math.random() - 0.5) * ms * 0.8);
+    const items = ['weapon_laser', 'weapon_shotgun', 'item_heal', 'item_shield', 'item_speed'];
+    const pick = PLACE_DEFS.find(d => d.id === items[i % items.length]);
+    const obj = { type: pick.id, layer: 'loot', x, z };
+    if (pick.lootType) { obj.lootType = pick.lootType; obj.lootId = pick.lootId || null; }
+    EDITOR.objects.push(obj);
+  }
+}
+
+// ===== 本地存储 =====
+function saveToLocal() {
+  // 保存时清除所有新增标记 → 恢复常规颜色
+  clearNewFlags();
+  const data = generateLevelData();
+  localStorage.setItem('editorLevel_' + EDITOR.mapName, JSON.stringify(data));
+  // ★ 保存时自动同步到游戏关卡选择列表
+  autoSyncToGameLevels(data);
+  showToast('💾 已保存并同步到游戏: ' + EDITOR.mapName);
+  redraw();
+}
+
+// ★ 自动同步到游戏关卡列表（保存即同步）
+function autoSyncToGameLevels(data) {
+  const CUSTOM_LEVELS_KEY = 'starPartyCustomLevels';
+  let customs = [];
+  try { customs = JSON.parse(localStorage.getItem(CUSTOM_LEVELS_KEY)) || []; } catch(e) { customs = []; }
+  const existIdx = customs.findIndex(c => c.name === data.name);
+  const entry = {
+    id: 'custom_' + Date.now(),
+    name: data.name || '自定义关卡',
+    desc: '编辑器自定义关卡 (' + (data.objects || []).length + '个对象)',
+    icon: '🛠',
+    difficulty: '自定义',
+    color: '#ff8800',
+    mapSize: data.mapSize || 120,
+    timer: 300,
+    isCustom: true,
+    editorData: data,
+    createdAt: Date.now()
+  };
+  if (existIdx >= 0) { customs[existIdx] = entry; }
+  else { customs.push(entry); }
+  localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customs));
+}
+
+function loadFromLocal() {
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('editorLevel_'));
+  if (keys.length === 0) { showToast('没有找到已保存的关卡', true); return; }
+  const names = keys.map(k => k.replace('editorLevel_', ''));
+  const name = prompt('输入要加载的关卡名称:\n\n已保存: ' + names.join(', '));
+  if (!name) return;
+  const raw = localStorage.getItem('editorLevel_' + name);
+  if (!raw) { showToast('未找到关卡: ' + name, true); return; }
+  try {
+    const data = JSON.parse(raw);
+    if (data.objects) {
+      saveUndo();
+      EDITOR.objects = data.objects;
+      EDITOR.mapSize = data.mapSize || 120;
+      EDITOR.mapName = data.name || name;
+      document.getElementById('mapSize').value = EDITOR.mapSize;
+      document.getElementById('mapName').value = EDITOR.mapName;
+      EDITOR.selected = null;
+      updateObjectList(); updatePropsPanel(); buildLayerUI(); redraw();
+      showToast('✅ 已加载: ' + name);
+    }
+  } catch (e) { showToast('加载失败: ' + e.message, true); }
+}
+
+// ===== 导出/导入 =====
+function generateLevelData() {
+  // 导出时清除内部标记
+  const cleanObjects = EDITOR.objects.map(obj => {
+    const clean = Object.assign({}, obj);
+    delete clean._isNew;
+    return clean;
+  });
+  return { version: '1.1', name: EDITOR.mapName, mapSize: EDITOR.mapSize, objects: cleanObjects };
+}
+
+function showExportModal() {
+  document.getElementById('exportData').value = JSON.stringify(generateLevelData(), null, 2);
+  document.getElementById('exportModal').classList.add('show');
+}
+
+function copyExport() {
+  const ta = document.getElementById('exportData');
+  ta.select(); document.execCommand('copy');
+  showToast('✅ 已复制到剪贴板');
+}
+
+function downloadExport() {
+  const data = document.getElementById('exportData').value;
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'level_' + EDITOR.mapName + '_' + Date.now() + '.json';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('⬇ 已下载');
+}
+
+function showImportModal() {
+  document.getElementById('importData').value = '';
+  document.getElementById('importModal').classList.add('show');
+}
+
+function doImport() {
+  try {
+    const raw = document.getElementById('importData').value.trim();
+    const data = JSON.parse(raw);
+    if (data.objects && Array.isArray(data.objects)) {
+      saveUndo();
+      EDITOR.objects = data.objects;
+      if (data.mapSize) { EDITOR.mapSize = data.mapSize; document.getElementById('mapSize').value = data.mapSize; }
+      if (data.name) { EDITOR.mapName = data.name; document.getElementById('mapName').value = data.name; }
+      EDITOR.selected = null;
+      updateObjectList(); updatePropsPanel(); buildLayerUI(); redraw();
+      closeModal('importModal');
+      showToast('✅ 导入成功 (' + data.objects.length + ' 个对象)');
+    } else { showToast('❌ 无效的关卡数据', true); }
+  } catch (e) { showToast('❌ JSON解析失败: ' + e.message, true); }
+}
+
+function loadFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => { document.getElementById('importData').value = ev.target.result; };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+// ===== 清空 =====
+function clearAll() {
+  if (!confirm('确定清空所有对象？此操作可撤销。')) return;
+  saveUndo(); EDITOR.objects = []; EDITOR.selected = null;
+  updateObjectList(); updatePropsPanel(); buildLayerUI(); redraw();
+  showToast('已清空所有对象');
+}
+
+function onMapSizeChange() { EDITOR.mapSize = parseInt(document.getElementById('mapSize').value) || 120; redraw(); }
+
+function togglePanel(header) {
+  header.classList.toggle('collapsed');
+  const body = header.nextElementSibling;
+  if (body) body.classList.toggle('collapsed');
+}
+
+function setStatus(msg) { document.getElementById('statusInfo').textContent = msg; }
+
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ===== 加载默认关卡 =====
+function loadDefaultLevel() {
+  const buildings = [
+    [0,4,-120,240,8,2,'wall'],[0,4,120,240,8,2,'wall'],[-120,4,0,2,8,240,'wall'],[120,4,0,2,8,240,'wall'],
+    [0,3,0,20,6,20,'accent'],[0,6,-10,22,0.5,2,'accent'],[0,6,10,22,0.5,2,'accent'],
+    [-45,3,-30,2,6,25,'wall'],[-55,3,-17,18,6,2,'wall'],[-55,3,-43,18,6,2,'wall'],[-50,2,-30,8,4,8,'accent'],
+    [45,3,30,2,6,25,'wall'],[55,3,17,18,6,2,'wall'],[55,3,43,18,6,2,'wall'],[50,2,30,6,4,6,'accent'],
+    [0,4,-70,30,8,2,'danger'],[-15,4,-85,2,8,28,'danger'],[15,4,-85,2,8,28,'danger'],[0,4,-100,32,8,2,'danger'],[0,3,-85,10,6,5,'danger'],
+    [-25,1.5,15,4,3,8,'wall'],[25,1.5,-15,8,3,4,'wall'],[-15,1.5,50,6,3,4,'wall'],[15,1.5,-50,4,3,6,'wall'],
+    [40,1.5,-40,5,3,5,'wall'],[-40,1.5,40,5,3,5,'wall'],[70,1.5,0,4,3,10,'wall'],[-70,1.5,0,10,3,4,'wall'],
+    [30,1.5,60,6,3,3,'wall'],[-30,1.5,-60,3,3,6,'wall'],[60,1.5,60,8,3,2,'wall'],[-60,1.5,-60,2,3,8,'wall'],
+    [0,1.5,40,12,3,2,'wall'],[0,1.5,-40,2,3,12,'wall'],[80,1.5,-70,6,3,6,'accent'],[-80,1.5,70,6,3,6,'accent']
+  ];
+  buildings.forEach(b => {
+    EDITOR.objects.push({ type: b[3] > 6 || b[5] > 6 ? 'wall' : 'cover', layer: 'buildings', x: b[0], z: b[2], y: b[1], w: b[3], h: b[4], d: b[5], material: b[6] });
+  });
+  const enemyData = [[-30,-30,'sentinel'],[30,30,'sentinel'],[-50,20,'alien'],[50,-20,'alien'],[0,-60,'sentinel'],[-20,60,'alien'],[20,-80,'sentinel'],[-60,-50,'alien'],[60,50,'alien'],[0,30,'sentinel']];
+  enemyData.forEach(e => { EDITOR.objects.push({ type: e[2], layer: 'enemies', x: e[0], z: e[1] }); });
+  const lootData = [
+    [-20,-5,'weapon_laser'],[20,5,'weapon_laser'],[-50,-30,'weapon_shotgun'],[50,30,'weapon_shotgun'],
+    [0,-85,'weapon_blade'],[-30,20,'weapon_laser'],[30,-20,'weapon_shotgun'],[-70,0,'weapon_laser'],
+    [70,0,'weapon_shotgun'],[0,50,'weapon_blade'],
+    [-10,10,'item_shield'],[10,-10,'item_heal'],[-45,-25,'item_speed'],[45,25,'item_heal'],
+    [-5,-80,'item_damage'],[5,-90,'item_stealth'],[-25,-50,'item_grenade'],[25,50,'item_grenade'],
+    [60,-50,'item_shield'],[-60,50,'item_speed'],[0,0,'item_heal'],[40,-70,'item_damage'],
+    [0,-75,'fragment'],[-10,-90,'fragment'],[10,-95,'fragment']
+  ];
+  lootData.forEach(l => {
+    const def = PLACE_DEFS.find(d => d.id === l[2]);
+    const obj = { type: l[2], layer: 'loot', x: l[0], z: l[1] };
+    if (def && def.lootType) { obj.lootType = def.lootType; obj.lootId = def.lootId || null; }
+    EDITOR.objects.push(obj);
+  });
+  [[80,80],[-80,-80],[80,-80],[-80,80]].forEach(s => {
+    EDITOR.objects.push({ type: 'spawn_point', layer: 'spawn', x: s[0], z: s[1] });
+  });
+  [[-50,-30,'#00ffff'],[50,30,'#00ffff'],[0,-85,'#ff3333'],[0,0,'#4488ff'],[70,0,'#ff8800'],[-70,0,'#ff8800']].forEach(l => {
+    EDITOR.objects.push({ type: 'light', layer: 'lights', x: l[0], z: l[1], lightColor: l[2] });
+  });
+  updateObjectList(); buildLayerUI();
+}
+
+// ===== 3D预览 =====
+let previewScene, previewCamera, previewRenderer, previewActive = false;
+
+function preview3D() {
+  const container = document.getElementById('preview3d');
+  container.classList.add('show');
+  previewActive = true;
+  const pCanvas = document.getElementById('previewCanvas');
+  pCanvas.width = window.innerWidth; pCanvas.height = window.innerHeight;
+  previewScene = new THREE.Scene();
+  previewScene.background = new THREE.Color(0x050510);
+  previewScene.fog = new THREE.FogExp2(0x050510, 0.004);
+  previewCamera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+  previewCamera.position.set(0, 80, 100); previewCamera.lookAt(0, 0, 0);
+  previewRenderer = new THREE.WebGLRenderer({ canvas: pCanvas, antialias: true });
+  previewRenderer.setSize(window.innerWidth, window.innerHeight);
+  previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  previewScene.add(new THREE.AmbientLight(0x334466, 0.6));
+  const dl = new THREE.DirectionalLight(0xaaccff, 1.0); dl.position.set(50, 80, 30); previewScene.add(dl);
+  previewScene.add(new THREE.HemisphereLight(0x4488ff, 0x223344, 0.4));
+  const ms = EDITOR.mapSize;
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(ms * 2, ms * 2), new THREE.MeshStandardMaterial({ color: 0x1a2a3a, roughness: 0.7 }));
+  floor.rotation.x = -Math.PI / 2; previewScene.add(floor);
+  const grid = new THREE.GridHelper(ms * 2, 40, 0x0a2a4a, 0x0a1a2a); grid.position.y = 0.01; previewScene.add(grid);
+  const matMap = {
+    wall: new THREE.MeshStandardMaterial({ color: 0x2a3a5a, roughness: 0.5, metalness: 0.5 }),
+    accent: new THREE.MeshStandardMaterial({ color: 0x0a4a8a, roughness: 0.3, metalness: 0.7, emissive: 0x001133, emissiveIntensity: 0.2 }),
+    danger: new THREE.MeshStandardMaterial({ color: 0x4a2a2a, roughness: 0.5, metalness: 0.5, emissive: 0x330000, emissiveIntensity: 0.15 })
+  };
+  EDITOR.objects.forEach(obj => {
+    if (obj.layer === 'buildings') {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(obj.w || 10, obj.h || 6, obj.d || 2), matMap[obj.material] || matMap.wall);
+      m.position.set(obj.x, obj.y || (obj.h || 6) / 2, obj.z); m.castShadow = true; previewScene.add(m);
+    } else if (obj.layer === 'enemies') {
+      const colors = { sentinel: 0x4444aa, alien: 0x44aa44, elite: 0xaa2222 };
+      const h = obj.type === 'elite' ? 2.8 : obj.type === 'sentinel' ? 2.0 : 1.5;
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, h, 6), new THREE.MeshStandardMaterial({ color: colors[obj.type] || 0x4444aa, emissive: colors[obj.type] || 0x111111, emissiveIntensity: 0.3 }));
+      m.position.set(obj.x, h / 2, obj.z); previewScene.add(m);
+    } else if (obj.layer === 'loot') {
+      const isWeapon = obj.lootType === 'weapon', isFragment = obj.lootType === 'fragment';
+      const geo = isWeapon ? new THREE.BoxGeometry(0.8, 0.3, 0.3) : new THREE.OctahedronGeometry(isFragment ? 0.5 : 0.4);
+      const color = isWeapon ? 0x00ffff : isFragment ? 0xff88ff : 0x00ff88;
+      const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.4 }));
+      m.position.set(obj.x, isWeapon ? 0.8 : isFragment ? 1 : 0.5, obj.z); previewScene.add(m);
+    } else if (obj.layer === 'spawn') {
+      const m = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 8), new THREE.MeshBasicMaterial({ color: 0xffcc00, transparent: true, opacity: 0.6 }));
+      m.position.set(obj.x, 1, obj.z); previewScene.add(m);
+    } else if (obj.layer === 'lights') {
+      const c = parseInt((obj.lightColor || '#00ffff').replace('#', ''), 16);
+      previewScene.add(new THREE.PointLight(c, 1.5, 25).translateX(obj.x).translateY(5).translateZ(obj.z));
+      const glow = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({ color: c }));
+      glow.position.set(obj.x, 5, obj.z); previewScene.add(glow);
+    }
+  });
+  let isDragging3D = false, prevMouse = { x: 0, y: 0 };
+  let camAngleX = -0.6, camAngleY = 0, camDist = 120;
+  function updateCam() {
+    previewCamera.position.x = Math.sin(camAngleY) * Math.cos(camAngleX) * camDist;
+    previewCamera.position.y = Math.sin(camAngleX) * camDist;
+    previewCamera.position.z = Math.cos(camAngleY) * Math.cos(camAngleX) * camDist;
+    previewCamera.lookAt(0, 0, 0);
+  }
+  updateCam();
+  pCanvas.onmousedown = e => { isDragging3D = true; prevMouse = { x: e.clientX, y: e.clientY }; };
+  pCanvas.onmousemove = e => {
+    if (!isDragging3D) return;
+    camAngleY += (e.clientX - prevMouse.x) * 0.005;
+    camAngleX -= (e.clientY - prevMouse.y) * 0.005;
+    camAngleX = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, camAngleX));
+    prevMouse = { x: e.clientX, y: e.clientY }; updateCam();
+  };
+  pCanvas.onmouseup = () => isDragging3D = false;
+  pCanvas.onwheel = e => { e.preventDefault(); camDist += e.deltaY * 0.1; camDist = Math.max(10, Math.min(300, camDist)); updateCam(); };
+  function anim() { if (!previewActive) return; requestAnimationFrame(anim); previewRenderer.render(previewScene, previewCamera); }
+  anim();
+}
+
+function closePreview3D() {
+  previewActive = false;
+  document.getElementById('preview3d').classList.remove('show');
+  if (previewRenderer) { previewRenderer.dispose(); previewRenderer = null; }
+}
+
+// ===== 测试游戏 =====
+function testInGame() {
+  const data = generateLevelData();
+  localStorage.setItem('editorLevelData', JSON.stringify(data));
+  window.open('index.html?editor=1', '_blank');
+  showToast('🎮 已在新标签页打开游戏测试');
+}
+
+// ===== 保存到游戏关卡选择列表 =====
+function saveToGameLevels() {
+  // 先清除新增标记
+  clearNewFlags();
+  const data = generateLevelData();
+  // 使用 state.js 中定义的 addCustomLevel 方式存储
+  const CUSTOM_LEVELS_KEY = 'starPartyCustomLevels';
+  let customs = [];
+  try { customs = JSON.parse(localStorage.getItem(CUSTOM_LEVELS_KEY)) || []; } catch(e) { customs = []; }
+  // 查找同名关卡
+  const existIdx = customs.findIndex(c => c.name === data.name);
+  const entry = {
+    id: 'custom_' + Date.now(),
+    name: data.name || '自定义关卡',
+    desc: '编辑器自定义关卡 (' + (data.objects || []).length + '个对象)',
+    icon: '🛠',
+    difficulty: '自定义',
+    color: '#ff8800',
+    mapSize: data.mapSize || 120,
+    timer: 300,
+    isCustom: true,
+    editorData: data,
+    createdAt: Date.now()
+  };
+  if (existIdx >= 0) {
+    customs[existIdx] = entry;
+    showToast('📥 已更新游戏关卡: ' + data.name);
+  } else {
+    customs.push(entry);
+    showToast('📥 已保存到游戏关卡: ' + data.name);
+  }
+  localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customs));
+  // 同时保存到本地编辑器存储
+  localStorage.setItem('editorLevel_' + EDITOR.mapName, JSON.stringify(data));
+  redraw();
+}
+
+// ===== 实时预览 =====
+let livePreviewActive = false;
+
+function openLivePreview() {
+  // 先同步数据
+  const data = generateLevelData();
+  localStorage.setItem('editorLevelData', JSON.stringify(data));
+  // 显示实时预览容器
+  const container = document.getElementById('livePreviewContainer');
+  container.classList.add('show');
+  livePreviewActive = true;
+  // 加载游戏到 iframe
+  const iframe = document.getElementById('livePreviewFrame');
+  iframe.src = 'index.html?editor=1&live=1';
+  // 更新按钮状态
+  document.getElementById('btnLivePreview').style.color = '#ff4444';
+  document.getElementById('btnLivePreview').textContent = '🔴 预览中...';
+  showToast('🔴 实时预览已开启 · 编辑内容将自动同步');
+}
+
+function closeLivePreview() {
+  livePreviewActive = false;
+  const container = document.getElementById('livePreviewContainer');
+  container.classList.remove('show');
+  const iframe = document.getElementById('livePreviewFrame');
+  iframe.src = '';
+  // 恢复按钮
+  document.getElementById('btnLivePreview').style.color = '';
+  document.getElementById('btnLivePreview').textContent = '🔴 实时预览';
+  showToast('实时预览已关闭');
+}
+
+function syncToLivePreview() {
+  if (!livePreviewActive) return;
+  const data = generateLevelData();
+  localStorage.setItem('editorLevelData', JSON.stringify(data));
+  // 触发 storage 事件给 iframe（同源 localStorage 变化会自动触发）
+  // 由于同页面不会触发 storage event，需要手动通知 iframe
+  const iframe = document.getElementById('livePreviewFrame');
+  if (iframe && iframe.contentWindow) {
+    try {
+      iframe.contentWindow.postMessage({ type: 'editorSync', data: data }, '*');
+    } catch(e) {
+      // 如果 postMessage 失败，直接刷新 iframe
+      iframe.src = 'index.html?editor=1&live=1';
+    }
+  }
+}
+
+// ===== 新增对象高亮管理 =====
+let newObjAnimTimer = null;
+
+function clearNewFlags() {
+  EDITOR.objects.forEach(obj => { delete obj._isNew; });
+  if (newObjAnimTimer) { cancelAnimationFrame(newObjAnimTimer); newObjAnimTimer = null; }
+}
+
+function startNewObjAnimation() {
+  if (newObjAnimTimer) return; // 已经在运行
+  function animLoop() {
+    const hasNew = EDITOR.objects.some(obj => obj._isNew);
+    if (!hasNew) { newObjAnimTimer = null; return; }
+    redraw();
+    newObjAnimTimer = requestAnimationFrame(animLoop);
+  }
+  newObjAnimTimer = requestAnimationFrame(animLoop);
+}
+
+// ===== 初始化 =====
+init();
+</script>
+</body>
+</html>
