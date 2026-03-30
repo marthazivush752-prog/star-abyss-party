@@ -327,6 +327,225 @@ body.resizing * { cursor: col-resize !important; }
   color: #64748b; font-size: 13px; text-align: center; padding: 40px;
   letter-spacing: 1px;
 }
+
+/* ==================== 响应式适配 ==================== */
+
+/* --- 移动端面板切换按钮 --- */
+.mobile-panel-toggle {
+  display: none;
+  position: fixed; bottom: 16px; z-index: 200;
+  padding: 10px 14px; font-size: 18px;
+  background: rgba(17,24,39,0.95); border: 1px solid #334155;
+  border-radius: 12px; color: #0ff; cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s;
+}
+.mobile-panel-toggle:hover { background: rgba(0,255,255,0.15); border-color: rgba(0,255,255,0.4); }
+.mobile-panel-toggle.left { left: 16px; }
+.mobile-panel-toggle.right { right: 16px; }
+
+/* --- 平板 & 小屏PC (≤1024px) --- */
+@media (max-width: 1024px) {
+  .toolbar { min-height: 40px; padding: 2px 6px; gap: 2px; }
+  .toolbar-brand { font-size: 12px; margin-right: 4px; }
+  .toolbar-brand span { font-size: 10px; }
+  .tb-group { padding: 0 3px; gap: 1px; }
+  .tb-btn { padding: 3px 6px; font-size: 11px; gap: 2px; }
+  .tb-info { font-size: 11px; }
+  .main-layout { height: calc(100vh - 40px); }
+  .left-panel, .right-panel { width: 200px; min-width: 120px; max-width: 320px; }
+  .panel-header { padding: 6px 8px; font-size: 11px; }
+  .panel-body { padding: 6px 8px; }
+  .place-btn .icon { font-size: 18px; }
+  .place-btn { padding: 8px 6px; font-size: 11px; }
+  .prop-label { font-size: 11px; width: 44px; }
+  .prop-input, .prop-select { font-size: 12px; padding: 4px 6px; }
+  .layer-name { font-size: 12px; }
+  .layer-item { padding: 5px 6px; }
+  .obj-item { padding: 5px 8px; }
+  .obj-name { font-size: 11px; }
+  .canvas-info { font-size: 11px; padding: 3px 8px; }
+  .canvas-tool-btn { font-size: 11px; padding: 3px 8px; }
+  /* 弹窗适配 */
+  .modal { min-width: 300px; max-width: 520px; padding: 16px; }
+  .modal-title { font-size: 16px; margin-bottom: 12px; }
+  #levelManagerModal .modal { min-width: 420px; max-width: 680px; width: 85vw; }
+  .lm-item-name { font-size: 12px; }
+  .lm-item-desc { font-size: 10px; }
+  .lm-item-meta { font-size: 9px; }
+  .lm-action { padding: 3px 8px; font-size: 10px; }
+  .lm-tab { padding: 4px 10px; font-size: 11px; }
+}
+
+/* --- 平板竖屏 & 大手机 (≤768px) --- */
+@media (max-width: 768px) {
+  .toolbar { min-height: 38px; padding: 2px 4px; gap: 1px; flex-wrap: wrap; }
+  .toolbar-brand { font-size: 11px; margin-right: 2px; }
+  .toolbar-brand span { display: none; }
+  .tb-group { padding: 0 2px; gap: 0; }
+  .tb-btn { padding: 2px 5px; font-size: 10px; border-radius: 4px; }
+  .tb-info { font-size: 10px; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .main-layout { height: calc(100vh - 38px); }
+  /* 隐藏左右面板，用浮动层代替 */
+  .left-panel, .right-panel {
+    position: fixed; top: 38px; z-index: 150;
+    width: 260px !important; max-width: 70vw;
+    height: calc(100vh - 38px); transition: transform 0.3s ease;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+  }
+  .left-panel { left: 0; transform: translateX(-100%); }
+  .left-panel.mobile-open { transform: translateX(0); }
+  .right-panel { right: 0; transform: translateX(100%); }
+  .right-panel.mobile-open { transform: translateX(0); }
+  .panel-resizer { display: none; }
+  .mobile-panel-toggle { display: block; }
+  /* 画布占满 */
+  .canvas-area { flex: 1; }
+  .canvas-overlay { bottom: 60px; left: 8px; gap: 4px; }
+  .canvas-info { font-size: 10px; padding: 2px 6px; }
+  .canvas-tools { bottom: 60px; right: 8px; gap: 4px; }
+  .canvas-tool-btn { font-size: 10px; padding: 3px 6px; }
+  /* 弹窗全屏适配 */
+  .modal { min-width: unset !important; max-width: 95vw !important; width: 95vw !important; padding: 14px; max-height: 90vh; }
+  .modal-title { font-size: 15px; margin-bottom: 10px; }
+  .modal textarea { height: 200px; font-size: 12px; }
+  .modal-actions { gap: 6px; }
+  #levelManagerModal .modal { min-width: unset !important; width: 95vw !important; }
+  .lm-tabs { gap: 2px; flex-wrap: wrap; }
+  .lm-tab { padding: 4px 8px; font-size: 10px; }
+  .lm-item { padding: 8px 10px; gap: 8px; flex-wrap: wrap; }
+  .lm-item-icon { font-size: 20px; }
+  .lm-item-name { font-size: 12px; }
+  .lm-item-desc { font-size: 10px; }
+  .lm-item-meta { font-size: 9px; gap: 6px; }
+  .lm-item-actions { gap: 3px; flex-wrap: wrap; width: 100%; justify-content: flex-end; }
+  .lm-action { padding: 3px 7px; font-size: 10px; }
+  .lm-list { max-height: 50vh; }
+  /* 新建地图弹窗 */
+  .new-map-template { padding: 10px; }
+  .new-map-template h4 { font-size: 13px; }
+  .new-map-template p { font-size: 11px; }
+  .place-tools { grid-template-columns: 1fr 1fr; gap: 4px; }
+  .place-btn { padding: 6px 4px; font-size: 10px; }
+  .place-btn .icon { font-size: 16px; margin-bottom: 2px; }
+  /* 发布弹窗 */
+  #publishConfirmModal .modal { width: 95vw !important; max-width: 95vw !important; }
+  #publishConfirmBody { font-size: 12px; line-height: 1.6; }
+  /* 3D预览 */
+  .preview-3d-close { padding: 6px 14px; font-size: 12px; top: 10px; right: 10px; }
+  .preview-3d-info { font-size: 11px; padding: 4px 8px; bottom: 10px; left: 10px; }
+  /* 实时预览 */
+  .live-preview-toolbar { height: 36px; padding: 0 8px; gap: 4px; }
+  .live-preview-toolbar .lp-title { font-size: 12px; }
+  .live-preview-toolbar .lp-info { font-size: 10px; }
+  /* Toast */
+  .toast { top: 44px; right: 10px; font-size: 12px; padding: 8px 14px; }
+}
+
+/* --- 手机 (≤480px) --- */
+@media (max-width: 480px) {
+  .toolbar { min-height: 36px; padding: 1px 3px; gap: 0; }
+  .toolbar-brand { font-size: 10px; }
+  .tb-group { padding: 0 1px; border-left: none; }
+  .tb-btn { padding: 2px 4px; font-size: 9px; border-radius: 3px; }
+  /* 隐藏非核心按钮文字，只保留图标 */
+  .tb-btn .btn-text { display: none; }
+  .tb-info { display: none; }
+  .main-layout { height: calc(100vh - 36px); }
+  .left-panel, .right-panel { top: 36px; height: calc(100vh - 36px); width: 240px !important; }
+  .mobile-panel-toggle { bottom: 12px; padding: 8px 12px; font-size: 16px; border-radius: 10px; }
+  .mobile-panel-toggle.left { left: 12px; }
+  .mobile-panel-toggle.right { right: 12px; }
+  .canvas-overlay { bottom: 50px; left: 6px; gap: 3px; }
+  .canvas-info { font-size: 9px; padding: 2px 5px; }
+  .canvas-tools { bottom: 50px; right: 6px; gap: 3px; }
+  .canvas-tool-btn { font-size: 9px; padding: 2px 5px; }
+  /* 弹窗 */
+  .modal { padding: 12px; border-radius: 8px; }
+  .modal-title { font-size: 14px; margin-bottom: 8px; }
+  .modal textarea { height: 160px; font-size: 11px; padding: 8px; }
+  .modal-actions { flex-wrap: wrap; }
+  .lm-tabs { gap: 1px; padding-bottom: 6px; }
+  .lm-tab { padding: 3px 6px; font-size: 9px; }
+  .lm-item { padding: 6px 8px; gap: 6px; }
+  .lm-item-icon { font-size: 18px; }
+  .lm-item-name { font-size: 11px; flex-wrap: wrap; }
+  .lm-status { font-size: 8px; padding: 1px 5px; }
+  .lm-item-desc { font-size: 9px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .lm-item-meta { font-size: 8px; gap: 4px; }
+  .lm-action { padding: 2px 5px; font-size: 9px; }
+  .lm-empty { padding: 24px; font-size: 12px; }
+  .lm-list { max-height: 45vh; }
+  /* 属性面板 */
+  .prop-row { gap: 4px; margin-bottom: 6px; }
+  .prop-label { font-size: 10px; width: 36px; }
+  .prop-input, .prop-select { font-size: 11px; padding: 3px 5px; }
+  .prop-color { width: 26px; height: 22px; }
+  /* 放置工具 */
+  .place-tools { gap: 3px; }
+  .place-btn { padding: 5px 3px; font-size: 9px; }
+  .place-btn .icon { font-size: 14px; margin-bottom: 1px; }
+  /* 图层 */
+  .layer-item { padding: 4px 5px; gap: 5px; }
+  .layer-name { font-size: 11px; }
+  .layer-count { font-size: 10px; }
+  .layer-dot { width: 8px; height: 8px; }
+  /* 新建地图 */
+  .new-map-template { padding: 8px; }
+  .new-map-template h4 { font-size: 12px; }
+  .new-map-template p { font-size: 10px; }
+  .new-map-options { gap: 8px; margin-bottom: 10px; }
+  /* 发布配置 */
+  #publishConfirmBody { font-size: 11px; line-height: 1.5; }
+  /* 实时预览 */
+  .live-preview-toolbar { height: 32px; gap: 3px; }
+  .live-preview-toolbar .lp-title { font-size: 11px; }
+  .live-preview-toolbar .lp-info { display: none; }
+  /* 3D预览 */
+  .preview-3d-close { padding: 5px 10px; font-size: 11px; top: 8px; right: 8px; }
+  .preview-3d-info { font-size: 10px; padding: 3px 6px; }
+  /* Toast */
+  .toast { top: 40px; right: 8px; font-size: 11px; padding: 6px 12px; border-radius: 6px; max-width: calc(100vw - 16px); }
+}
+
+/* --- 超小屏 (≤360px) --- */
+@media (max-width: 360px) {
+  .toolbar { min-height: 32px; }
+  .tb-btn { padding: 1px 3px; font-size: 8px; }
+  .toolbar-brand { font-size: 9px; }
+  .main-layout { height: calc(100vh - 32px); }
+  .left-panel, .right-panel { top: 32px; height: calc(100vh - 32px); width: 200px !important; }
+  .mobile-panel-toggle { bottom: 10px; padding: 6px 10px; font-size: 14px; }
+  .canvas-overlay { bottom: 44px; }
+  .canvas-tools { bottom: 44px; }
+  .modal { padding: 10px; }
+  .modal-title { font-size: 13px; }
+  .lm-item-actions { gap: 2px; }
+  .lm-action { padding: 2px 4px; font-size: 8px; }
+}
+
+/* --- 横屏手机特殊处理 --- */
+@media (max-height: 500px) and (orientation: landscape) {
+  .toolbar { min-height: 32px; padding: 1px 4px; }
+  .tb-btn { padding: 1px 4px; font-size: 9px; }
+  .toolbar-brand { font-size: 10px; }
+  .main-layout { height: calc(100vh - 32px); }
+  .left-panel, .right-panel { top: 32px; height: calc(100vh - 32px); }
+  .panel-body { max-height: 120px; }
+  .modal { max-height: 95vh; padding: 10px; }
+  .modal-title { font-size: 13px; margin-bottom: 6px; }
+  .modal textarea { height: 100px; }
+  .lm-list { max-height: 40vh; }
+  .lm-item { padding: 5px 8px; }
+  .new-map-options { gap: 6px; }
+  .new-map-template { padding: 6px; }
+  .new-map-template h4 { font-size: 11px; }
+  .new-map-template p { font-size: 9px; }
+  .canvas-overlay { bottom: 8px; }
+  .canvas-tools { bottom: 8px; }
+  .toast { top: 36px; }
+}
 </style>
 </head>
 <body>
@@ -596,6 +815,10 @@ body.resizing * { cursor: col-resize !important; }
     </div>
   </div>
 </div>
+
+<!-- 移动端面板切换按钮 -->
+<button class="mobile-panel-toggle left" id="btnToggleLeft" title="显示/隐藏左侧面板">📑</button>
+<button class="mobile-panel-toggle right" id="btnToggleRight" title="显示/隐藏右侧面板">📋</button>
 
 <!-- 通知 -->
 <div class="toast" id="toast"></div>
@@ -935,6 +1158,101 @@ function bindEvents() {
   // 点击modal遮罩关闭
   document.querySelectorAll('.modal-overlay').forEach(m => {
     m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
+  });
+
+  // ===== 移动端面板切换 =====
+  document.getElementById('btnToggleLeft').addEventListener('click', function() {
+    const lp = document.getElementById('leftPanel');
+    const rp = document.getElementById('rightPanel');
+    lp.classList.toggle('mobile-open');
+    rp.classList.remove('mobile-open');
+  });
+  document.getElementById('btnToggleRight').addEventListener('click', function() {
+    const rp = document.getElementById('rightPanel');
+    const lp = document.getElementById('leftPanel');
+    rp.classList.toggle('mobile-open');
+    lp.classList.remove('mobile-open');
+  });
+  // 点击画布区域关闭移动端面板
+  document.getElementById('canvasArea').addEventListener('click', function(e) {
+    if (window.innerWidth <= 768) {
+      document.getElementById('leftPanel').classList.remove('mobile-open');
+      document.getElementById('rightPanel').classList.remove('mobile-open');
+    }
+  });
+
+  // ===== 触摸事件支持 =====
+  let touchStart = null, touchPanning = false;
+  canvas.addEventListener('touchstart', function(e) {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const sx = touch.clientX - rect.left, sy = touch.clientY - rect.top;
+      touchStart = { x: touch.clientX, y: touch.clientY, sx, sy, time: Date.now() };
+    } else if (e.touches.length === 2) {
+      e.preventDefault();
+      touchPanning = true;
+      touchStart = {
+        dist: Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY),
+        zoom: EDITOR.zoom,
+        midX: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        midY: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+        panX: EDITOR.panX, panY: EDITOR.panY
+      };
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    if (e.touches.length === 2 && touchStart && touchStart.dist) {
+      // 双指缩放+平移
+      const newDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      const scale = newDist / touchStart.dist;
+      EDITOR.zoom = Math.max(0.1, Math.min(10, touchStart.zoom * scale));
+      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      EDITOR.panX = touchStart.panX + (midX - touchStart.midX);
+      EDITOR.panY = touchStart.panY + (midY - touchStart.midY);
+      redraw();
+    } else if (e.touches.length === 1 && touchStart && !touchPanning) {
+      const touch = e.touches[0];
+      const dx = touch.clientX - touchStart.x;
+      const dy = touch.clientY - touchStart.y;
+      // 如果移动距离够大，视为拖拽平移
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        EDITOR.panX += touch.clientX - (touchStart._lastX || touchStart.x);
+        EDITOR.panY += touch.clientY - (touchStart._lastY || touchStart.y);
+        touchStart._lastX = touch.clientX;
+        touchStart._lastY = touch.clientY;
+        touchStart._moved = true;
+        redraw();
+      }
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', function(e) {
+    if (touchStart && !touchStart._moved && e.changedTouches.length === 1 && !touchPanning) {
+      // 短按 = 点击
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.changedTouches[0];
+      const sx = touch.clientX - rect.left, sy = touch.clientY - rect.top;
+      const world = screenToWorld(sx, sy);
+      if (EDITOR.tool === 'place' && EDITOR.placeType) {
+        placeObject(world.x, world.z);
+      } else if (EDITOR.tool === 'select' || EDITOR.tool === 'move') {
+        EDITOR.selected = hitTest(sx, sy);
+        updateObjectList(); updatePropsPanel(); redraw();
+      } else if (EDITOR.tool === 'erase') {
+        const hit = hitTest(sx, sy);
+        if (hit !== null) {
+          saveUndo(); EDITOR.objects.splice(hit, 1); EDITOR.selected = null;
+          updateObjectList(); updatePropsPanel(); buildLayerUI(); redraw();
+          showToast('已删除对象');
+        }
+      }
+    }
+    touchStart = null;
+    touchPanning = false;
   });
 }
 

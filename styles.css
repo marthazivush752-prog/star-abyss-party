@@ -922,3 +922,281 @@ canvas#gameCanvas { display: block; position: fixed; top: 0; left: 0; z-index: 0
   border-color: #ffcc00 !important;
   box-shadow: 0 8px 25px rgba(255,200,0,0.2) !important;
 }
+
+/* ========== 响应式适配 ========== */
+
+/* --- 平板 & 小屏PC (≤1024px) --- */
+@media (max-width: 1024px) {
+  .title-text { font-size: 40px; letter-spacing: 4px; }
+  .subtitle-text { font-size: 17px; letter-spacing: 5px; margin-bottom: 36px; }
+  .menu-btn { padding: 14px 44px; font-size: 16px; letter-spacing: 3px; }
+  .controls-info { font-size: 12px; margin-top: 30px; }
+  .result-title { font-size: 40px; }
+  .stat-value { font-size: 26px; }
+  .reward-item { width: 70px; height: 70px; }
+  .reward-item .reward-icon { font-size: 24px; }
+  .level-grid { width: 95%; max-width: 900px; }
+  .level-card { width: 150px; min-width: 130px; }
+  .settings-panel { min-width: 340px; max-width: 420px; padding: 24px 30px; }
+  .role-modal { min-width: 380px; max-width: 460px; padding: 24px; }
+  .minimap-container { width: 150px; height: 150px; }
+  .kill-feed { right: 170px; width: 250px; }
+  .bonus-info { right: 170px; }
+  .settings-btn { right: 170px; }
+}
+
+/* --- 平板竖屏 & 大手机 (≤768px) --- */
+@media (max-width: 768px) {
+  .title-text { font-size: 32px; letter-spacing: 3px; }
+  .subtitle-text { font-size: 14px; letter-spacing: 4px; margin-bottom: 28px; }
+  .menu-btn { padding: 12px 36px; font-size: 15px; letter-spacing: 2px; margin: 6px 0; }
+  .controls-info { font-size: 11px; margin-top: 20px; padding: 0 20px; line-height: 1.8; }
+  /* HUD */
+  .health-bar-container { bottom: 20px; left: 16px; width: 200px; }
+  .health-text { font-size: 18px; }
+  .weapon-info { bottom: 20px; right: 16px; }
+  .weapon-name { font-size: 14px; }
+  .ammo-text { font-size: 28px; }
+  .ammo-text span { font-size: 16px; }
+  .game-info { top: 10px; left: 10px; }
+  .game-timer { font-size: 22px; }
+  .game-phase { font-size: 12px; letter-spacing: 2px; }
+  .game-score { font-size: 13px; }
+  .minimap-container { width: 120px; height: 120px; top: 10px; right: 10px; }
+  .kill-feed { right: 140px; width: 200px; top: 60px; }
+  .kill-feed-item { font-size: 11px; }
+  .bonus-info { right: 140px; top: 100px; padding: 6px 10px; }
+  .bonus-mult { font-size: 14px; }
+  .settings-btn { right: 140px; top: 10px; width: 36px; height: 36px; font-size: 18px; line-height: 36px; }
+  .wave-info { top: 90px; left: 10px; padding: 6px 10px; }
+  .wave-text { font-size: 14px; }
+  .inventory-bar { bottom: 70px; }
+  .inv-slot { width: 48px; height: 48px; }
+  .inv-slot .slot-icon { font-size: 20px; }
+  .inv-slot .slot-key { font-size: 8px; }
+  .inv-slot .slot-name { font-size: 7px; }
+  .pickup-prompt { bottom: 130px; font-size: 14px; padding: 8px 16px; }
+  .zone-warning { font-size: 16px; padding: 8px 20px; }
+  .game-message { font-size: 24px; }
+  .game-message-sub { font-size: 13px; }
+  /* 关卡选择 */
+  .level-screen-header { padding: 14px 0 8px; }
+  .level-screen-title { font-size: 24px; letter-spacing: 4px; }
+  .level-screen-subtitle { font-size: 12px; }
+  .level-grid { width: 96%; padding: 0 10px; }
+  .level-card { width: 140px; min-width: 120px; padding: 12px 10px; }
+  .level-card-icon { font-size: 28px; }
+  .level-card-name { font-size: 13px; }
+  .level-card-desc { font-size: 9px; min-height: 24px; }
+  .level-screen-footer .menu-btn { padding: 10px 30px; font-size: 14px; }
+  .separator-text { font-size: 12px; }
+  /* 设置面板 */
+  .settings-panel { min-width: 300px; max-width: 380px; padding: 20px 24px; }
+  .settings-title { font-size: 20px; margin-bottom: 18px; }
+  .settings-section-title { font-size: 13px; }
+  .settings-label { font-size: 12px; min-width: 70px; }
+  .settings-action-btn { padding: 9px 16px; font-size: 13px; }
+  /* 结算 */
+  .result-title { font-size: 36px; margin-bottom: 20px; }
+  .result-stats { gap: 10px 24px; margin-bottom: 24px; }
+  .stat-value { font-size: 24px; }
+  .reward-items { gap: 10px; margin-bottom: 20px; }
+  .reward-item { width: 64px; height: 64px; }
+  .reward-item .reward-icon { font-size: 22px; }
+  .reward-item .reward-name { font-size: 9px; }
+  /* 死亡 */
+  .death-icon { font-size: 56px; }
+  .death-text { font-size: 34px; letter-spacing: 4px; }
+  .respawn-text { font-size: 18px; }
+  .respawn-text span { font-size: 26px; }
+  .respawn-btn { width: 120px; height: 85px; }
+  .respawn-btn-icon { font-size: 30px; }
+  .respawn-btn-label { font-size: 12px; }
+  /* 角色弹窗 */
+  .role-modal { min-width: 320px; max-width: 420px; padding: 20px; }
+  .role-modal-title { font-size: 18px; margin-bottom: 18px; }
+  .role-option { padding: 12px 14px; }
+  .role-option-icon { font-size: 30px; }
+  .role-option-name { font-size: 14px; }
+  .role-option-desc { font-size: 11px; }
+  /* 教程 */
+  .tutorial-content { max-width: 500px; padding: 0 20px; }
+  .tutorial-step h2 { font-size: 22px; }
+  .tutorial-step p { font-size: 14px; }
+  .tutorial-step .tutorial-icon { font-size: 48px; }
+}
+
+/* --- 手机 (≤480px) --- */
+@media (max-width: 480px) {
+  .title-text { font-size: 26px; letter-spacing: 2px; margin-bottom: 4px; }
+  .subtitle-text { font-size: 12px; letter-spacing: 3px; margin-bottom: 20px; }
+  .menu-btn { padding: 10px 28px; font-size: 14px; letter-spacing: 2px; margin: 5px 0; border-radius: 10px; }
+  .controls-info { font-size: 10px; margin-top: 16px; padding: 0 16px; }
+  .controls-info span { padding: 1px 5px; margin: 0 2px; font-size: 10px; }
+  .role-indicator { padding: 6px 14px; gap: 8px; margin-bottom: 14px; }
+  .role-icon { font-size: 16px; }
+  .role-text { font-size: 12px; letter-spacing: 1px; }
+  .role-switch-btn { width: 28px; height: 28px; font-size: 14px; }
+  /* HUD */
+  .health-bar-container { bottom: 12px; left: 8px; width: 160px; }
+  .health-label { font-size: 10px; }
+  .health-bar-bg { height: 8px; }
+  .health-text { font-size: 16px; }
+  .weapon-info { bottom: 12px; right: 8px; }
+  .weapon-name { font-size: 12px; letter-spacing: 1px; }
+  .ammo-text { font-size: 22px; }
+  .ammo-text span { font-size: 14px; }
+  .game-info { top: 6px; left: 6px; }
+  .game-timer { font-size: 18px; }
+  .game-phase { font-size: 10px; letter-spacing: 1px; }
+  .game-score { font-size: 11px; margin-top: 4px; }
+  .minimap-container { width: 90px; height: 90px; top: 6px; right: 6px; }
+  .kill-feed { display: none; }
+  .bonus-info { right: 100px; top: 80px; padding: 4px 8px; }
+  .bonus-mult { font-size: 12px; }
+  .bonus-timer { font-size: 10px; }
+  .settings-btn { right: 100px; top: 6px; width: 32px; height: 32px; font-size: 16px; line-height: 32px; }
+  .wave-info { top: 70px; left: 6px; padding: 4px 8px; }
+  .wave-text { font-size: 12px; }
+  .wave-sub { font-size: 10px; }
+  .inventory-bar { bottom: 50px; gap: 4px; }
+  .inv-slot { width: 40px; height: 40px; border-radius: 6px; }
+  .inv-slot .slot-icon { font-size: 16px; }
+  .inv-slot .slot-key { font-size: 7px; left: 3px; top: 1px; }
+  .inv-slot .slot-name { display: none; }
+  .pickup-prompt { bottom: 100px; font-size: 12px; padding: 6px 12px; }
+  .zone-warning { font-size: 13px; padding: 6px 16px; letter-spacing: 2px; }
+  .game-message { font-size: 20px; }
+  .game-message-sub { font-size: 12px; }
+  .evac-progress-container { width: 220px; }
+  .evac-progress-text { font-size: 14px; }
+  .buff-indicator { top: 160px; left: 6px; }
+  .buff-item { padding: 3px 6px; }
+  .buff-item .buff-icon { font-size: 14px; }
+  .buff-item .buff-name { font-size: 10px; }
+  .buff-item .buff-timer { font-size: 9px; }
+  .item-hint { bottom: 120px; }
+  .weapon-preview { bottom: 180px; padding: 8px 14px; min-width: 160px; }
+  .preview-title { font-size: 14px; }
+  .preview-stat { font-size: 11px; }
+  /* 关卡选择 */
+  .level-screen-header { padding: 10px 0 6px; }
+  .level-screen-title { font-size: 20px; letter-spacing: 3px; }
+  .level-screen-subtitle { font-size: 11px; letter-spacing: 2px; }
+  .level-scroll-area { padding: 6px 0 14px; }
+  .level-grid { width: 98%; padding: 0 6px; }
+  .level-section-cards { gap: 8px; }
+  .level-card { width: 130px; min-width: 110px; padding: 10px 8px; border-radius: 8px; }
+  .level-card-icon { font-size: 24px; margin-bottom: 4px; }
+  .level-card-name { font-size: 12px; letter-spacing: 0; }
+  .level-card-diff { font-size: 10px; margin-bottom: 3px; }
+  .level-card-desc { font-size: 9px; -webkit-line-clamp: 1; min-height: 14px; }
+  .level-card-star { font-size: 10px; margin-top: 4px; }
+  .level-card-play { font-size: 10px; margin-top: 4px; }
+  .custom-level-meta { font-size: 9px; }
+  .custom-level-delete { width: 20px; height: 20px; font-size: 10px; top: 5px; right: 5px; }
+  .level-screen-footer { padding: 8px 0 12px; }
+  .level-screen-footer .menu-btn { padding: 8px 24px; font-size: 13px; }
+  .level-section-header, .level-grid-separator { padding: 6px 0 4px; gap: 8px; }
+  .separator-text { font-size: 11px; letter-spacing: 1px; }
+  .admin-badge { font-size: 10px; padding: 1px 8px; }
+  /* 设置面板 */
+  .settings-panel { min-width: 280px; max-width: 340px; padding: 18px 20px; border-radius: 12px; }
+  .settings-title { font-size: 18px; letter-spacing: 2px; margin-bottom: 16px; }
+  .settings-section { margin-bottom: 12px; padding-bottom: 10px; }
+  .settings-section-title { font-size: 12px; margin-bottom: 8px; }
+  .settings-row { gap: 8px; margin-bottom: 8px; }
+  .settings-label { font-size: 11px; min-width: 60px; }
+  .settings-value { font-size: 11px; min-width: 34px; }
+  .settings-action-btn { padding: 8px 14px; font-size: 12px; letter-spacing: 1px; }
+  .settings-close-hint { font-size: 10px; }
+  /* 结算 */
+  #result-screen { padding: 20px; }
+  .result-title { font-size: 30px; letter-spacing: 4px; margin-bottom: 16px; }
+  .result-stats { grid-template-columns: 1fr 1fr; gap: 8px 16px; margin-bottom: 18px; }
+  .stat-label { font-size: 11px; }
+  .stat-value { font-size: 20px; }
+  .reward-items { gap: 8px; margin-bottom: 16px; flex-wrap: wrap; justify-content: center; }
+  .reward-item { width: 56px; height: 56px; border-radius: 8px; }
+  .reward-item .reward-icon { font-size: 20px; }
+  .reward-item .reward-name { font-size: 8px; }
+  #result-screen .menu-btn { padding: 8px 24px; font-size: 13px; }
+  /* 死亡 */
+  .death-icon { font-size: 48px; margin-bottom: 8px; }
+  .death-text { font-size: 28px; letter-spacing: 3px; margin-bottom: 10px; }
+  .respawn-text { font-size: 16px; }
+  .respawn-text span { font-size: 22px; }
+  .respawn-choose-title { font-size: 16px; margin-bottom: 14px; }
+  .respawn-buttons { gap: 16px; }
+  .respawn-btn { width: 100px; height: 75px; border-radius: 10px; }
+  .respawn-btn-icon { font-size: 26px; margin-bottom: 4px; }
+  .respawn-btn-label { font-size: 11px; letter-spacing: 1px; }
+  .respawn-auto-hint { font-size: 11px; }
+  .respawn-auto-hint span { font-size: 14px; }
+  .respawn-hint { font-size: 12px; margin-top: 10px; }
+  /* 角色弹窗 */
+  .role-modal { min-width: 0; max-width: 340px; width: 90vw; padding: 18px; border-radius: 12px; }
+  .role-modal-title { font-size: 16px; letter-spacing: 2px; margin-bottom: 14px; }
+  .role-option { padding: 10px 12px; margin-bottom: 8px; gap: 10px; border-radius: 10px; }
+  .role-option-icon { font-size: 26px; }
+  .role-option-name { font-size: 13px; letter-spacing: 1px; }
+  .role-option-desc { font-size: 10px; }
+  .role-password-input { padding: 8px 10px; font-size: 13px; }
+  .role-login-btn { padding: 8px 16px; font-size: 13px; }
+  .role-cancel-btn { padding: 6px 24px; font-size: 12px; }
+  /* 教程 */
+  .tutorial-content { max-width: 95vw; padding: 0 16px; }
+  .tutorial-step .tutorial-icon { font-size: 40px; margin-bottom: 12px; }
+  .tutorial-step h2 { font-size: 18px; letter-spacing: 2px; margin-bottom: 14px; }
+  .tutorial-step p { font-size: 13px; line-height: 1.6; margin-bottom: 10px; }
+  .tutorial-nav { gap: 10px; margin-top: 20px; }
+  .tutorial-nav .menu-btn { padding: 8px 24px; font-size: 13px; }
+  /* 加载 */
+  .loading-text { font-size: 16px; letter-spacing: 3px; }
+  .loading-bar-bg { width: 240px; }
+  .loading-tip { font-size: 11px; }
+  /* 锁定按钮提示 */
+  .menu-btn.locked::after { font-size: 9px; bottom: -18px; }
+}
+
+/* --- 超小屏 (≤360px) --- */
+@media (max-width: 360px) {
+  .title-text { font-size: 22px; }
+  .subtitle-text { font-size: 11px; margin-bottom: 16px; }
+  .menu-btn { padding: 8px 22px; font-size: 13px; }
+  .level-card { width: 110px; min-width: 100px; padding: 8px 6px; }
+  .level-card-icon { font-size: 20px; }
+  .level-card-name { font-size: 11px; }
+  .settings-panel { min-width: 260px; padding: 14px 16px; }
+  .role-modal { width: 92vw; padding: 14px; }
+  .result-title { font-size: 26px; }
+  .stat-value { font-size: 18px; }
+  .minimap-container { width: 70px; height: 70px; }
+}
+
+/* --- 横屏手机特殊处理 --- */
+@media (max-height: 500px) and (orientation: landscape) {
+  .screen-overlay { padding-top: 0; }
+  #start-screen { gap: 0; }
+  .title-text { font-size: 24px; margin-bottom: 2px; }
+  .subtitle-text { font-size: 11px; margin-bottom: 10px; }
+  .menu-btn { padding: 6px 28px; font-size: 13px; margin: 3px 0; }
+  .controls-info { margin-top: 8px; font-size: 9px; line-height: 1.6; }
+  .role-indicator { margin-bottom: 8px; padding: 4px 12px; }
+  .level-screen-header { padding: 6px 0 4px; }
+  .level-screen-title { font-size: 18px; }
+  .level-screen-subtitle { font-size: 10px; }
+  .level-screen-footer { padding: 4px 0 8px; }
+  .level-screen-footer .menu-btn { padding: 6px 20px; font-size: 12px; }
+  .level-card { width: 120px; min-width: 100px; padding: 8px 6px; }
+  .settings-panel { padding: 14px 20px; max-height: 90vh; overflow-y: auto; }
+  .settings-title { font-size: 16px; margin-bottom: 10px; }
+  .settings-section { margin-bottom: 8px; padding-bottom: 8px; }
+  .result-title { font-size: 28px; margin-bottom: 12px; }
+  .result-stats { margin-bottom: 14px; }
+  .death-icon { font-size: 40px; }
+  .death-text { font-size: 24px; }
+  .tutorial-step .tutorial-icon { font-size: 36px; }
+  .tutorial-step h2 { font-size: 16px; }
+  .tutorial-step p { font-size: 12px; }
+}
