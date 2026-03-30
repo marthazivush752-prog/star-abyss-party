@@ -199,10 +199,16 @@
 
 <!-- 关卡选择界面 -->
 <div class="screen-overlay" id="level-screen" style="display:none;">
-  <div class="level-screen-title">🗺️ 关卡选择</div>
-  <div class="level-screen-subtitle">通过每一关解锁下一关卡</div>
-  <div class="level-grid" id="levelGrid"></div>
-  <button class="menu-btn" id="btnLevelsBack" style="margin-top:20px;">↩ 返回主界面</button>
+  <div class="level-screen-header">
+    <div class="level-screen-title">🗺️ 关卡选择</div>
+    <div class="level-screen-subtitle">通过每一关解锁下一关卡</div>
+  </div>
+  <div class="level-scroll-area">
+    <div class="level-grid" id="levelGrid"></div>
+  </div>
+  <div class="level-screen-footer">
+    <button class="menu-btn" id="btnLevelsBack">↩ 返回主界面</button>
+  </div>
 </div>
 
 <div class="screen-overlay" id="tutorial-screen">

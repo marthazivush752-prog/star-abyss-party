@@ -789,14 +789,29 @@ function buildLevelGrid(){
   migrateCustomLevels();
   // 导入内置关卡到管理器
   importBuiltinLevelsToManager();
-  // 管理员标识
+
+  // === 辅助函数：创建分区标题 ===
+  function createSectionTitle(icon, text, color){
+    const header=document.createElement('div');
+    header.className='level-section-header';
+    header.innerHTML=`<span class="separator-line" style="${color?'background:linear-gradient(90deg,transparent,'+color+',transparent);':''}"></span><span class="separator-text" style="${color?'color:'+color+';':''}"> ${icon} ${text}</span><span class="separator-line" style="${color?'background:linear-gradient(90deg,transparent,'+color+',transparent);':''}"></span>`;
+    return header;
+  }
+
+  // === 管理员标识 ===
   if(admin){
     const adminTag=document.createElement('div');
-    adminTag.style.cssText='grid-column:1/-1;text-align:center;margin-bottom:10px;';
+    adminTag.style.cssText='text-align:center;margin-bottom:6px;';
     adminTag.innerHTML='<span class="admin-badge">👑 管理员模式 · 所有关卡已开放</span>';
     grid.appendChild(adminTag);
   }
-  // 内置关卡
+
+  // === 内置关卡分区 ===
+  const builtinSection=document.createElement('div');
+  builtinSection.className='level-section';
+  builtinSection.appendChild(createSectionTitle('🎮','内置关卡','rgba(0,255,255,0.4)'));
+  const builtinCards=document.createElement('div');
+  builtinCards.className='level-section-cards';
   LEVELS.forEach((lvl,i)=>{
     const unlocked=admin||i<=progress.unlockedLevel;
     const completed=progress.completedLevels.includes(i);
@@ -810,20 +825,21 @@ function buildLevelGrid(){
       ${completed?'<div class="level-card-star">⭐ 已通关</div>':''}
       ${unlocked&&!completed?'<div class="level-card-play">点击开始</div>':''}
     `;
-    if(unlocked){
-      card.addEventListener('click',()=>startLevelGame(i));
-    }
-    grid.appendChild(card);
+    if(unlocked) card.addEventListener('click',()=>startLevelGame(i));
+    builtinCards.appendChild(card);
   });
-  // ===== 已上线的自定义关卡（所有人可见） =====
+  builtinSection.appendChild(builtinCards);
+  grid.appendChild(builtinSection);
+
+  // === 已上线的自定义关卡分区（所有人可见） ===
   const published=getPublishedLevels();
-  // 按 sortOrder 排序（数字越小越靠前）
   published.sort((a,b)=>(a.sortOrder||999)-(b.sortOrder||999));
   if(published.length>0){
-    const separator=document.createElement('div');
-    separator.className='level-grid-separator';
-    separator.innerHTML='<span class="separator-line"></span><span class="separator-text">🟢 已上线自定义关卡</span><span class="separator-line"></span>';
-    grid.appendChild(separator);
+    const pubSection=document.createElement('div');
+    pubSection.className='level-section';
+    pubSection.appendChild(createSectionTitle('🟢','已上线自定义关卡','rgba(255,136,0,0.4)'));
+    const pubCards=document.createElement('div');
+    pubCards.className='level-section-cards';
     published.forEach((clvl)=>{
       const card=document.createElement('div');
       card.className='level-card unlocked custom-level-card';
@@ -854,17 +870,22 @@ function buildLevelGrid(){
           }
         });
       }
-      grid.appendChild(card);
+      pubCards.appendChild(card);
     });
+    pubSection.appendChild(pubCards);
+    grid.appendChild(pubSection);
   }
-  // ===== 管理员：测试中关卡（仅管理员可见） =====
+
+  // === 管理员专属分区 ===
   if(admin){
+    // === 测试中关卡分区 ===
     const testing=getTestingLevels();
     if(testing.length>0){
-      const sepTesting=document.createElement('div');
-      sepTesting.className='level-grid-separator';
-      sepTesting.innerHTML='<span class="separator-line" style="background:linear-gradient(90deg,transparent,rgba(167,139,250,0.4),transparent);"></span><span class="separator-text" style="color:#a78bfa;">🧪 测试中关卡 (仅管理员可见)</span><span class="separator-line" style="background:linear-gradient(90deg,transparent,rgba(167,139,250,0.4),transparent);"></span>';
-      grid.appendChild(sepTesting);
+      const testSection=document.createElement('div');
+      testSection.className='level-section';
+      testSection.appendChild(createSectionTitle('🧪','测试中关卡 (仅管理员可见)','rgba(167,139,250,0.4)'));
+      const testCards=document.createElement('div');
+      testCards.className='level-section-cards';
       testing.forEach((tlvl)=>{
         const card=document.createElement('div');
         card.className='level-card unlocked custom-level-card';
@@ -895,16 +916,20 @@ function buildLevelGrid(){
             }
           });
         }
-        grid.appendChild(card);
+        testCards.appendChild(card);
       });
+      testSection.appendChild(testCards);
+      grid.appendChild(testSection);
     }
-    // ===== 管理员：草稿关卡 =====
+
+    // === 草稿关卡分区 ===
     const drafts=getDraftLevels();
     if(drafts.length>0){
-      const sepDraft=document.createElement('div');
-      sepDraft.className='level-grid-separator';
-      sepDraft.innerHTML='<span class="separator-line" style="background:linear-gradient(90deg,transparent,rgba(100,116,139,0.3),transparent);"></span><span class="separator-text" style="color:#94a3b8;">📝 草稿关卡</span><span class="separator-line" style="background:linear-gradient(90deg,transparent,rgba(100,116,139,0.3),transparent);"></span>';
-      grid.appendChild(sepDraft);
+      const draftSection=document.createElement('div');
+      draftSection.className='level-section';
+      draftSection.appendChild(createSectionTitle('📝','草稿关卡','rgba(100,116,139,0.3)'));
+      const draftCards=document.createElement('div');
+      draftCards.className='level-section-cards';
       drafts.forEach((dlvl)=>{
         const card=document.createElement('div');
         card.className='level-card unlocked custom-level-card';
@@ -921,14 +946,18 @@ function buildLevelGrid(){
           <div class="level-card-play" style="color:#94a3b8;">点击预览</div>
         `;
         card.addEventListener('click',()=>{startCustomLevelGame(dlvl);});
-        grid.appendChild(card);
+        draftCards.appendChild(card);
       });
+      draftSection.appendChild(draftCards);
+      grid.appendChild(draftSection);
     }
-    // 上传关卡入口
+
+    // === 上传关卡入口分区 ===
     const uploadSection=document.createElement('div');
-    uploadSection.style.cssText='grid-column:1/-1;text-align:center;margin-top:16px;';
+    uploadSection.className='level-section';
+    uploadSection.style.cssText='text-align:center;padding:10px 0;';
     uploadSection.innerHTML=`
-      <button class="menu-btn" id="btnUploadLevel" style="padding:12px 40px;font-size:15px;background:linear-gradient(135deg,rgba(150,100,0,0.5),rgba(120,80,0,0.7));border-color:rgba(255,200,0,0.5);">📤 上传新关卡 (JSON)</button>
+      <button class="menu-btn" id="btnUploadLevel" style="padding:10px 36px;font-size:14px;background:linear-gradient(135deg,rgba(150,100,0,0.5),rgba(120,80,0,0.7));border-color:rgba(255,200,0,0.5);">📤 上传新关卡 (JSON)</button>
       <input type="file" id="levelFileInput" accept=".json" style="display:none;">
     `;
     grid.appendChild(uploadSection);
