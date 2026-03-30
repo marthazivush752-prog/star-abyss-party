@@ -1876,7 +1876,7 @@ function renderLevelManagerList(filter) {
     div.innerHTML = `
       <div class="lm-item-icon">${lvl.icon || '🛠'}</div>
       <div class="lm-item-info">
-        <div class="lm-item-name">${lvl.name} <span class="lm-status ${status}">${statusLabel}</span></div>
+        <div class="lm-item-name">${lvl.name} ${lvl._builtinId ? '<span style="font-size:9px;color:#0ff;background:rgba(0,255,255,0.1);padding:1px 5px;border-radius:4px;border:1px solid rgba(0,255,255,0.2);">内置</span> ' : ''}<span class="lm-status ${status}">${statusLabel}</span></div>
         <div class="lm-item-desc">${lvl.desc || '编辑器自定义关卡'}</div>
         <div class="lm-item-meta">
           <span>📦 ${objCount}个对象</span>

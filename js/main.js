@@ -787,6 +787,8 @@ function buildLevelGrid(){
   const admin=isAdmin();
   // 迁移旧数据
   migrateCustomLevels();
+  // 导入内置关卡到管理器
+  importBuiltinLevelsToManager();
   // 管理员标识
   if(admin){
     const adminTag=document.createElement('div');

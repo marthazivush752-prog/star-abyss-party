@@ -324,6 +324,128 @@ function migrateCustomLevels(){
   if(changed)saveCustomLevels(customs);
 }
 
+// 将内置关卡导入到关卡管理器（仅执行一次）
+function importBuiltinLevelsToManager(){
+  const IMPORT_KEY='starPartyBuiltinImported';
+  if(localStorage.getItem(IMPORT_KEY)==='v2')return; // 已导入
+  const customs=getCustomLevels();
+  // 默认地图建筑布局（scene.js 中的硬编码数据）
+  const defaultBuildings=[
+    [0,4,-120,240,8,2,'wall'],[0,4,120,240,8,2,'wall'],[-120,4,0,2,8,240,'wall'],[120,4,0,2,8,240,'wall'],
+    [0,3,0,20,6,20,'accent'],[0,6,-10,22,0.5,2,'accent'],[0,6,10,22,0.5,2,'accent'],
+    [-45,3,-30,2,6,25,'wall'],[-55,3,-17,18,6,2,'wall'],[-55,3,-43,18,6,2,'wall'],[-50,2,-30,8,4,8,'accent'],
+    [45,3,30,2,6,25,'wall'],[55,3,17,18,6,2,'wall'],[55,3,43,18,6,2,'wall'],[50,2,30,6,4,6,'accent'],
+    [0,4,-70,30,8,2,'danger'],[-15,4,-85,2,8,28,'danger'],[15,4,-85,2,8,28,'danger'],[0,4,-100,32,8,2,'danger'],[0,3,-85,10,6,5,'danger'],
+    [-25,1.5,15,4,3,8,'wall'],[25,1.5,-15,8,3,4,'wall'],[-15,1.5,50,6,3,4,'wall'],[15,1.5,-50,4,3,6,'wall'],
+    [40,1.5,-40,5,3,5,'wall'],[-40,1.5,40,5,3,5,'wall'],[70,1.5,0,4,3,10,'wall'],[-70,1.5,0,10,3,4,'wall'],
+    [30,1.5,60,6,3,3,'wall'],[-30,1.5,-60,3,3,6,'wall'],[60,1.5,60,8,3,2,'wall'],[-60,1.5,-60,2,3,8,'wall'],
+    [0,1.5,40,12,3,2,'wall'],[0,1.5,-40,2,3,12,'wall'],[80,1.5,-70,6,3,6,'accent'],[-80,1.5,70,6,3,6,'accent']
+  ];
+  const defaultLights=[[-50,5,-30,'#00ffff'],[50,5,30,'#00ffff'],[0,5,-85,'#ff3333'],[0,7,0,'#4488ff'],[70,4,0,'#ff8800'],[-70,4,0,'#ff8800']];
+  // lootId → 编辑器 type 映射
+  const lootTypeMap={
+    'laser_rifle':'weapon_laser','em_shotgun':'weapon_shotgun','energy_blade':'weapon_blade',
+    'heal':'item_heal','shield':'item_shield','speed':'item_speed',
+    'grenade':'item_grenade','damage_up':'item_damage','stealth':'item_stealth'
+  };
+  // 缩放建筑到指定 mapSize
+  function scaleBuildings(ms){
+    const ratio=ms/120;
+    return defaultBuildings.map(b=>{
+      // 围墙需要按比例缩放
+      const isWallBoundary=Math.abs(Math.abs(b[0])-120)<1||Math.abs(Math.abs(b[2])-120)<1;
+      if(isWallBoundary){
+        // 边界围墙：完全重生成
+        return null; // 后面单独生成
+      }
+      // 内部建筑：位置按比例缩放，但尺寸不变（避免变形）
+      const x=Math.round(b[0]*ratio);
+      const z=Math.round(b[2]*ratio);
+      // 如果缩放后超出地图范围则跳过
+      if(Math.abs(x)>=ms-2||Math.abs(z)>=ms-2)return null;
+      return {type:b[3]>6||b[5]>6?'wall':'cover',layer:'buildings',x:x,z:z,y:b[1],w:b[3],h:b[4],d:b[5],material:b[6]};
+    }).filter(Boolean);
+  }
+  function generateBoundaryWalls(ms){
+    return [
+      {type:'wall',layer:'buildings',x:0,z:-ms,y:4,w:ms*2,h:8,d:2,material:'wall'},
+      {type:'wall',layer:'buildings',x:0,z:ms,y:4,w:ms*2,h:8,d:2,material:'wall'},
+      {type:'wall',layer:'buildings',x:-ms,z:0,y:4,w:2,h:8,d:ms*2,material:'wall'},
+      {type:'wall',layer:'buildings',x:ms,z:0,y:4,w:2,h:8,d:ms*2,material:'wall'}
+    ];
+  }
+  function scaleLights(ms){
+    const ratio=ms/120;
+    return defaultLights.map(l=>{
+      const x=Math.round(l[0]*ratio);
+      const z=Math.round(l[2]*ratio);
+      if(Math.abs(x)>=ms-2||Math.abs(z)>=ms-2)return null;
+      return {type:'light',layer:'lights',x:x,z:z,lightColor:l[3]};
+    }).filter(Boolean);
+  }
+
+  LEVELS.forEach((lvl,idx)=>{
+    // 检查是否已存在同名内置关卡
+    const exists=customs.find(c=>c.name===lvl.name&&c._builtinId===lvl.id);
+    if(exists)return;
+    const ms=lvl.mapSize||120;
+    const objects=[];
+    // 建筑
+    objects.push(...generateBoundaryWalls(ms));
+    objects.push(...scaleBuildings(ms));
+    // 灯光
+    objects.push(...scaleLights(ms));
+    // 敌人
+    if(lvl.enemies){
+      lvl.enemies.forEach(e=>{
+        objects.push({type:e.t,layer:'enemies',x:e.p[0],z:e.p[2]});
+      });
+    }
+    // 物资
+    if(lvl.loot){
+      lvl.loot.forEach(l=>{
+        if(l.lootType==='fragment'){
+          objects.push({type:'fragment',layer:'loot',x:l.x,z:l.z,lootType:'fragment'});
+        }else{
+          const edType=lootTypeMap[l.lootId];
+          if(edType){
+            objects.push({type:edType,layer:'loot',x:l.x,z:l.z,lootType:l.lootType,lootId:l.lootId});
+          }
+        }
+      });
+    }
+    // 出生点
+    [[ms-10,ms-10],[-(ms-10),-(ms-10)],[ms-10,-(ms-10)],[-(ms-10),ms-10]].forEach(s=>{
+      objects.push({type:'spawn_point',layer:'spawn',x:s[0],z:s[1]});
+    });
+    // 撤离点
+    objects.push({type:'evac_point',layer:'evac',x:0,z:0});
+
+    const editorData={version:'1.1',name:lvl.name,mapSize:ms,objects:objects};
+    const entry={
+      id:'builtin_'+lvl.id+'_'+Date.now(),
+      name:lvl.name,
+      desc:lvl.desc,
+      icon:lvl.icon,
+      difficulty:lvl.difficulty,
+      color:lvl.color,
+      mapSize:ms,
+      timer:lvl.timer||300,
+      isCustom:true,
+      _builtinId:lvl.id,
+      status:'published',
+      sortOrder:(idx+1)*10,
+      version:1,
+      editorData:editorData,
+      createdAt:Date.now(),
+      updatedAt:Date.now()
+    };
+    customs.push(entry);
+  });
+  saveCustomLevels(customs);
+  localStorage.setItem(IMPORT_KEY,'v2');
+}
+
 // 关卡进度管理
 function getLevelProgress(){
   try{
