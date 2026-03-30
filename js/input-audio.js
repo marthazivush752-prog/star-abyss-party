@@ -1,6 +1,14 @@
 // ===== 输入系统 =====
 document.addEventListener('keydown',e=>{
   INPUT.keys[e.code]=true;
+  // ESC 键：唤起/关闭设置面板
+  if(e.code==='Escape'){
+    if(GAME.state==='playing'){
+      if(typeof togglePause==='function')togglePause();
+      e.preventDefault();
+      return;
+    }
+  }
   if(GAME.state==='playing'){
     if(PLAYER.alive){
       if(e.code==='KeyE')handlePickup();

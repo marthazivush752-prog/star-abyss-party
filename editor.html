@@ -35,10 +35,32 @@ body { background: #0a0e1a; color: #fff; font-family: 'Segoe UI', 'Microsoft YaH
 /* ===== 主布局 ===== */
 .main-layout { display: flex; height: calc(100vh - 48px); }
 
+/* ===== 拖拽分隔条 ===== */
+.panel-resizer {
+  width: 5px; min-width: 5px; cursor: col-resize;
+  background: transparent; position: relative; z-index: 50;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.panel-resizer:hover, .panel-resizer.active {
+  background: rgba(0,255,255,0.3);
+}
+.panel-resizer::after {
+  content: ''; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 3px; height: 40px; border-radius: 2px;
+  background: rgba(255,255,255,0.15);
+  transition: background 0.2s;
+}
+.panel-resizer:hover::after, .panel-resizer.active::after {
+  background: rgba(0,255,255,0.6);
+}
+
 /* ===== 左侧面板 ===== */
 .left-panel {
-  width: 280px; min-width: 280px; background: #111827;
+  width: 280px; min-width: 160px; max-width: 500px; background: #111827;
   border-right: 1px solid #1e293b; display: flex; flex-direction: column; overflow: hidden;
+  flex-shrink: 0;
 }
 .panel-section { border-bottom: 1px solid #1e293b; }
 .panel-header {
@@ -104,10 +126,25 @@ body { background: #0a0e1a; color: #fff; font-family: 'Segoe UI', 'Microsoft YaH
 }
 .canvas-info span { color: #0ff; }
 
+/* 画布工具按钮 */
+.canvas-tools {
+  position: absolute; bottom: 12px; right: 12px; display: flex; gap: 6px;
+}
+.canvas-tool-btn {
+  padding: 4px 10px; font-size: 12px; color: #94a3b8; background: rgba(0,0,0,0.7);
+  border: 1px solid #1e293b; border-radius: 5px; cursor: pointer; transition: all 0.2s;
+}
+.canvas-tool-btn:hover { color: #0ff; border-color: rgba(0,255,255,0.4); background: rgba(0,255,255,0.1); }
+
+/* 拖拽状态下禁止文字选中 */
+body.resizing { cursor: col-resize !important; user-select: none !important; }
+body.resizing * { cursor: col-resize !important; }
+
 /* ===== 右侧面板 ===== */
 .right-panel {
-  width: 280px; min-width: 280px; background: #111827;
+  width: 280px; min-width: 160px; max-width: 500px; background: #111827;
   border-left: 1px solid #1e293b; display: flex; flex-direction: column; overflow-y: auto;
+  flex-shrink: 0;
 }
 
 /* 对象列表 */
@@ -234,7 +271,7 @@ body { background: #0a0e1a; color: #fff; font-family: 'Segoe UI', 'Microsoft YaH
 
 <!-- 顶部工具栏 -->
 <div class="toolbar">
-  <div class="toolbar-brand">星渊编辑器 <span>v1.1</span></div>
+  <div class="toolbar-brand">星渊编辑器 <span>v1.2</span></div>
   <div class="tb-group">
     <button class="tb-btn success" id="btnNewMap">📄 新建</button>
     <button class="tb-btn" id="btnSave">💾 保存</button>
@@ -267,7 +304,7 @@ body { background: #0a0e1a; color: #fff; font-family: 'Segoe UI', 'Microsoft YaH
 
 <div class="main-layout">
   <!-- 左侧面板 -->
-  <div class="left-panel">
+  <div class="left-panel" id="leftPanel">
     <div class="panel-section">
       <div class="panel-header" id="layerHeader">
         <span>📑 图层</span><span class="arrow">▼</span>
@@ -308,6 +345,9 @@ body { background: #0a0e1a; color: #fff; font-family: 'Segoe UI', 'Microsoft YaH
     </div>
   </div>
 
+  <!-- 左侧拖拽分隔条 -->
+  <div class="panel-resizer" id="leftResizer"></div>
+
   <!-- 中央画布 -->
   <div class="canvas-area" id="canvasArea">
     <canvas id="editorCanvas"></canvas>
@@ -316,10 +356,17 @@ body { background: #0a0e1a; color: #fff; font-family: 'Segoe UI', 'Microsoft YaH
       <div class="canvas-info">缩放: <span id="zoomLevel">100%</span></div>
       <div class="canvas-info">物体: <span id="objCount">0</span></div>
     </div>
+    <div class="canvas-tools">
+      <button class="canvas-tool-btn" id="btnResetView" title="重置画布视图到中心">🔄 重置视图</button>
+      <button class="canvas-tool-btn" id="btnFitAll" title="自适应显示全部内容">📐 适应全部</button>
+    </div>
   </div>
 
+  <!-- 右侧拖拽分隔条 -->
+  <div class="panel-resizer" id="rightResizer"></div>
+
   <!-- 右侧面板 -->
-  <div class="right-panel">
+  <div class="right-panel" id="rightPanel">
     <div class="panel-section">
       <div class="panel-header" id="objListHeader">
         <span>📋 对象列表</span><span class="arrow">▼</span>
@@ -732,6 +779,14 @@ function bindEvents() {
   document.getElementById('mapSize').addEventListener('change', onMapSizeChange);
   document.getElementById('gridSize').addEventListener('change', () => redraw());
   document.getElementById('mapName').addEventListener('change', function() { EDITOR.mapName = this.value; });
+
+  // 画布工具按钮
+  document.getElementById('btnResetView').addEventListener('click', resetCanvasView);
+  document.getElementById('btnFitAll').addEventListener('click', fitAllObjects);
+
+  // ===== 面板拖拽调整宽度 =====
+  initPanelResizer('leftResizer', 'leftPanel', 'left');
+  initPanelResizer('rightResizer', 'rightPanel', 'right');
 
   // 点击modal遮罩关闭
   document.querySelectorAll('.modal-overlay').forEach(m => {
@@ -1496,6 +1551,102 @@ function startNewObjAnimation() {
     newObjAnimTimer = requestAnimationFrame(animLoop);
   }
   newObjAnimTimer = requestAnimationFrame(animLoop);
+}
+
+// ===== 面板拖拽调整宽度 =====
+function initPanelResizer(resizerId, panelId, side) {
+  const resizer = document.getElementById(resizerId);
+  const panel = document.getElementById(panelId);
+  if (!resizer || !panel) return;
+
+  let startX, startWidth, isDragging = false;
+
+  resizer.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    isDragging = true;
+    startX = e.clientX;
+    startWidth = panel.offsetWidth;
+    resizer.classList.add('active');
+    document.body.classList.add('resizing');
+
+    function onMouseMove(e) {
+      if (!isDragging) return;
+      let delta = e.clientX - startX;
+      if (side === 'right') delta = -delta; // 右侧面板反向
+      let newWidth = Math.max(160, Math.min(500, startWidth + delta));
+      panel.style.width = newWidth + 'px';
+      resizeCanvas();
+      redraw();
+    }
+
+    function onMouseUp() {
+      isDragging = false;
+      resizer.classList.remove('active');
+      document.body.classList.remove('resizing');
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    }
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  });
+}
+
+// ===== 画布视图控制 =====
+function resetCanvasView() {
+  EDITOR.zoom = 1;
+  EDITOR.panX = 0;
+  EDITOR.panY = 0;
+  redraw();
+  showToast('🔄 视图已重置');
+}
+
+function fitAllObjects() {
+  if (EDITOR.objects.length === 0) {
+    resetCanvasView();
+    return;
+  }
+  // 计算所有对象的边界
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  EDITOR.objects.forEach(obj => {
+    if (obj.layer === 'buildings') {
+      const halfW = (obj.w || 10) / 2, halfD = (obj.d || 2) / 2;
+      minX = Math.min(minX, obj.x - halfW);
+      maxX = Math.max(maxX, obj.x + halfW);
+      minZ = Math.min(minZ, obj.z - halfD);
+      maxZ = Math.max(maxZ, obj.z + halfD);
+    } else {
+      minX = Math.min(minX, obj.x - 2);
+      maxX = Math.max(maxX, obj.x + 2);
+      minZ = Math.min(minZ, obj.z - 2);
+      maxZ = Math.max(maxZ, obj.z + 2);
+    }
+  });
+  // 也考虑地图边界
+  const ms = EDITOR.mapSize;
+  minX = Math.min(minX, -ms);
+  maxX = Math.max(maxX, ms);
+  minZ = Math.min(minZ, -ms);
+  maxZ = Math.max(maxZ, ms);
+
+  const contentW = maxX - minX;
+  const contentH = maxZ - minZ;
+  const canvasW = canvas.width;
+  const canvasH = canvas.height;
+  const padding = 60; // 边距
+
+  const zoomX = (canvasW - padding * 2) / contentW;
+  const zoomY = (canvasH - padding * 2) / contentH;
+  EDITOR.zoom = Math.max(0.1, Math.min(5, Math.min(zoomX, zoomY)));
+
+  // 居中
+  const centerX = (minX + maxX) / 2;
+  const centerZ = (minZ + maxZ) / 2;
+  EDITOR.panX = -centerX * EDITOR.zoom;
+  EDITOR.panY = -centerZ * EDITOR.zoom;
+
+  redraw();
+  showToast('📐 已自适应显示全部内容');
 }
 
 // ===== 初始化 =====
