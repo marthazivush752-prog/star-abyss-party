@@ -813,8 +813,10 @@ function buildLevelGrid(){
     }
     grid.appendChild(card);
   });
-  // ===== 已上线的自定义关卡 =====
+  // ===== 已上线的自定义关卡（所有人可见） =====
   const published=getPublishedLevels();
+  // 按 sortOrder 排序（数字越小越靠前）
+  published.sort((a,b)=>(a.sortOrder||999)-(b.sortOrder||999));
   if(published.length>0){
     const separator=document.createElement('div');
     separator.className='level-grid-separator';
@@ -825,10 +827,11 @@ function buildLevelGrid(){
       card.className='level-card unlocked custom-level-card';
       const objCount=clvl.editorData&&clvl.editorData.objects?clvl.editorData.objects.length:0;
       const timeStr=clvl.updatedAt?new Date(clvl.updatedAt).toLocaleDateString():(clvl.createdAt?new Date(clvl.createdAt).toLocaleDateString():'');
+      const diffColor=clvl.color||'#ff8800';
       card.innerHTML=`
         <div class="level-card-icon">${clvl.icon||'🛠'}</div>
         <div class="level-card-name">${clvl.name}</div>
-        <div class="level-card-diff" style="color:${clvl.color||'#ff8800'}">${clvl.difficulty||'自定义'}</div>
+        <div class="level-card-diff" style="color:${diffColor}">${clvl.difficulty||'自定义'}</div>
         <div class="level-card-desc">${clvl.desc||'编辑器自定义关卡'}</div>
         <div class="custom-level-meta">${objCount}个对象${timeStr?' · '+timeStr:''} · v${clvl.version||1}</div>
         <div class="level-card-play">点击开始</div>
@@ -852,44 +855,70 @@ function buildLevelGrid(){
       grid.appendChild(card);
     });
   }
-  // ===== 管理员：待发布关卡 =====
+  // ===== 管理员：测试中关卡（仅管理员可见） =====
   if(admin){
-    const pending=getPendingLevels();
-    if(pending.length>0){
-      const sepPending=document.createElement('div');
-      sepPending.className='level-grid-separator';
-      sepPending.innerHTML='<span class="separator-line" style="background:linear-gradient(90deg,transparent,rgba(251,191,36,0.4),transparent);"></span><span class="separator-text" style="color:#fbbf24;">🟡 待发布关卡 (需确认发布)</span><span class="separator-line" style="background:linear-gradient(90deg,transparent,rgba(251,191,36,0.4),transparent);"></span>';
-      grid.appendChild(sepPending);
-      pending.forEach((plvl)=>{
+    const testing=getTestingLevels();
+    if(testing.length>0){
+      const sepTesting=document.createElement('div');
+      sepTesting.className='level-grid-separator';
+      sepTesting.innerHTML='<span class="separator-line" style="background:linear-gradient(90deg,transparent,rgba(167,139,250,0.4),transparent);"></span><span class="separator-text" style="color:#a78bfa;">🧪 测试中关卡 (仅管理员可见)</span><span class="separator-line" style="background:linear-gradient(90deg,transparent,rgba(167,139,250,0.4),transparent);"></span>';
+      grid.appendChild(sepTesting);
+      testing.forEach((tlvl)=>{
         const card=document.createElement('div');
         card.className='level-card unlocked custom-level-card';
-        card.style.borderColor='rgba(251,191,36,0.4)';
-        card.style.background='linear-gradient(135deg, rgba(40,35,0,0.9), rgba(30,25,0,0.95))';
-        const objCount=plvl.editorData&&plvl.editorData.objects?plvl.editorData.objects.length:0;
+        card.style.borderColor='rgba(167,139,250,0.4)';
+        card.style.background='linear-gradient(135deg, rgba(30,20,50,0.9), rgba(25,15,45,0.95))';
+        const objCount=tlvl.editorData&&tlvl.editorData.objects?tlvl.editorData.objects.length:0;
         card.innerHTML=`
-          <div class="level-card-icon">📦</div>
-          <div class="level-card-name">${plvl.name} <span style="font-size:10px;color:#fbbf24;font-weight:normal;">待发布</span></div>
-          <div class="level-card-diff" style="color:#fbbf24">等待发布</div>
-          <div class="level-card-desc">${plvl.desc||'等待管理员确认发布'}</div>
-          <div class="custom-level-meta">${objCount}个对象 · v${plvl.version||1}</div>
-          <div class="level-card-play" style="color:#fbbf24;">点击预览</div>
-          <button class="custom-level-delete" data-id="${plvl.id}" data-action="publish" title="确认发布" style="background:rgba(74,222,128,0.2);border-color:rgba(74,222,128,0.4);color:#4ade80;">✅</button>
+          <div class="level-card-icon">🧪</div>
+          <div class="level-card-name">${tlvl.name} <span style="font-size:10px;color:#a78bfa;font-weight:normal;">测试中</span></div>
+          <div class="level-card-diff" style="color:#a78bfa">测试发布</div>
+          <div class="level-card-desc">${tlvl.desc||'测试发布 · 仅管理员可见'}</div>
+          <div class="custom-level-meta">${objCount}个对象 · v${tlvl.version||1}</div>
+          <div class="level-card-play" style="color:#a78bfa;">点击测试</div>
+          <button class="custom-level-delete" data-id="${tlvl.id}" data-action="unpublish" title="下线回草稿" style="background:rgba(167,139,250,0.2);border-color:rgba(167,139,250,0.4);color:#a78bfa;">⏬</button>
         `;
         card.addEventListener('click',(e)=>{
           if(e.target.classList.contains('custom-level-delete'))return;
-          startCustomLevelGame(plvl);
+          startCustomLevelGame(tlvl);
         });
-        const pubBtn=card.querySelector('.custom-level-delete');
-        if(pubBtn){
-          pubBtn.addEventListener('click',(e)=>{
+        const unpubBtn=card.querySelector('.custom-level-delete');
+        if(unpubBtn){
+          unpubBtn.addEventListener('click',(e)=>{
             e.stopPropagation();
-            if(confirm('确认发布关卡「'+plvl.name+'」到游戏中？\n发布后玩家可在关卡选择中看到此关卡。')){
-              publishCustomLevel(plvl.id);
+            if(confirm('确定下线测试关卡「'+tlvl.name+'」？\n将回到草稿状态。')){
+              unpublishCustomLevel(tlvl.id);
               buildLevelGrid();
-              showToastInGame('✅ 已发布: '+plvl.name);
+              showToastInGame('⏬ 已下线: '+tlvl.name);
             }
           });
         }
+        grid.appendChild(card);
+      });
+    }
+    // ===== 管理员：草稿关卡 =====
+    const drafts=getDraftLevels();
+    if(drafts.length>0){
+      const sepDraft=document.createElement('div');
+      sepDraft.className='level-grid-separator';
+      sepDraft.innerHTML='<span class="separator-line" style="background:linear-gradient(90deg,transparent,rgba(100,116,139,0.3),transparent);"></span><span class="separator-text" style="color:#94a3b8;">📝 草稿关卡</span><span class="separator-line" style="background:linear-gradient(90deg,transparent,rgba(100,116,139,0.3),transparent);"></span>';
+      grid.appendChild(sepDraft);
+      drafts.forEach((dlvl)=>{
+        const card=document.createElement('div');
+        card.className='level-card unlocked custom-level-card';
+        card.style.borderColor='rgba(100,116,139,0.3)';
+        card.style.background='linear-gradient(135deg, rgba(20,25,35,0.9), rgba(15,20,30,0.95))';
+        card.style.opacity='0.75';
+        const objCount=dlvl.editorData&&dlvl.editorData.objects?dlvl.editorData.objects.length:0;
+        card.innerHTML=`
+          <div class="level-card-icon">📝</div>
+          <div class="level-card-name">${dlvl.name} <span style="font-size:10px;color:#94a3b8;font-weight:normal;">草稿</span></div>
+          <div class="level-card-diff" style="color:#94a3b8">草稿</div>
+          <div class="level-card-desc">${dlvl.desc||'草稿关卡'}</div>
+          <div class="custom-level-meta">${objCount}个对象 · v${dlvl.version||1}</div>
+          <div class="level-card-play" style="color:#94a3b8;">点击预览</div>
+        `;
+        card.addEventListener('click',()=>{startCustomLevelGame(dlvl);});
         grid.appendChild(card);
       });
     }

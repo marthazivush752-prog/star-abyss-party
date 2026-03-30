@@ -303,8 +303,11 @@ body.resizing * { cursor: col-resize !important; }
   letter-spacing: 1px; font-weight: bold; flex-shrink: 0;
 }
 .lm-status.published { background: rgba(0,255,136,0.15); color: #4ade80; border: 1px solid rgba(0,255,136,0.3); }
+.lm-status.testing { background: rgba(167,139,250,0.15); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); }
 .lm-status.pending { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
 .lm-status.draft { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); }
+.lm-action.test-publish { color: #a78bfa; }
+.lm-action.test-publish:hover { background: rgba(167,139,250,0.1); border-color: rgba(167,139,250,0.3); }
 .lm-item-actions { display: flex; gap: 4px; flex-shrink: 0; }
 .lm-action {
   padding: 4px 10px; font-size: 11px; border-radius: 5px;
@@ -536,7 +539,7 @@ body.resizing * { cursor: col-resize !important; }
     <div class="modal-title">📋 关卡编辑台</div>
     <div class="lm-tabs">
       <button class="lm-tab active" data-tab="published">🟢 已上线</button>
-      <button class="lm-tab" data-tab="pending">🟡 待发布</button>
+      <button class="lm-tab" data-tab="testing">🧪 测试中</button>
       <button class="lm-tab" data-tab="draft">⚪ 草稿</button>
       <button class="lm-tab" data-tab="all">📋 全部</button>
     </div>
@@ -549,16 +552,47 @@ body.resizing * { cursor: col-resize !important; }
   </div>
 </div>
 
-<!-- 发布确认弹窗 -->
+<!-- 正式发布配置弹窗 -->
 <div class="modal-overlay" id="publishConfirmModal">
-  <div class="modal" style="min-width:380px;max-width:480px;">
-    <div class="modal-title" style="color:#ffcc00;">⚠️ 发布确认</div>
-    <div id="publishConfirmBody" style="color:#ccc;font-size:14px;line-height:1.8;margin-bottom:16px;">
-      确认要发布此关卡吗？发布后将在游戏关卡选择中可见。
+  <div class="modal" style="min-width:400px;max-width:520px;">
+    <div class="modal-title" style="color:#4ade80;">🚀 正式发布配置</div>
+    <div id="publishConfirmBody" style="color:#ccc;font-size:14px;line-height:1.8;margin-bottom:12px;">
+      确认要正式发布此关卡吗？发布后所有玩家和管理员均可在游戏中看到。
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+      <div class="prop-row">
+        <span class="prop-label" style="width:70px;">难度</span>
+        <select class="prop-select" id="publishDifficulty">
+          <option value="简单">🟢 简单</option>
+          <option value="中等" selected>🟡 中等</option>
+          <option value="困难">🔴 困难</option>
+          <option value="地狱">💀 地狱</option>
+          <option value="自定义">🛠 自定义</option>
+        </select>
+      </div>
+      <div class="prop-row">
+        <span class="prop-label" style="width:70px;">图标</span>
+        <select class="prop-select" id="publishIcon">
+          <option value="🛠">🛠 默认</option>
+          <option value="🎯">🎯 靶子</option>
+          <option value="🏭">🏭 工厂</option>
+          <option value="🌑">🌑 暗影</option>
+          <option value="💀">💀 骷髅</option>
+          <option value="🔥">🔥 火焰</option>
+          <option value="⚡">⚡ 闪电</option>
+          <option value="🌟">🌟 星辰</option>
+          <option value="🏟️">🏟️ 竞技场</option>
+          <option value="🌀">🌀 漩涡</option>
+        </select>
+      </div>
+      <div class="prop-row">
+        <span class="prop-label" style="width:70px;">排序位置</span>
+        <input class="prop-input" type="number" id="publishSortOrder" value="100" min="1" max="999" title="数字越小越靠前">
+      </div>
     </div>
     <div class="modal-actions">
       <button class="tb-btn" id="btnPublishCancel">取消</button>
-      <button class="tb-btn success" id="btnPublishConfirm" style="color:#4ade80;border-color:rgba(74,222,128,0.5);">✅ 确认发布</button>
+      <button class="tb-btn success" id="btnPublishConfirm" style="color:#4ade80;border-color:rgba(74,222,128,0.5);">🚀 确认正式发布</button>
     </div>
   </div>
 </div>
@@ -1691,26 +1725,43 @@ function getCustomLevelsAll() {
 function saveCustomLevelsAll(levels) {
   localStorage.setItem(CUSTOM_LEVELS_KEY_GLOBAL, JSON.stringify(levels));
 }
-// 迁移旧数据：为没有 status 字段的关卡补上 published 状态
+// 迁移旧数据：为没有 status 字段的关卡补上 published 状态，pending→testing
 function migrateCustomLevels() {
   const customs = getCustomLevelsAll();
   let changed = false;
   customs.forEach(c => {
     if (!c.status) { c.status = 'published'; c.color = '#ff8800'; c.version = c.version || 1; c.updatedAt = c.updatedAt || c.createdAt || Date.now(); changed = true; }
+    if (c.status === 'pending') { c.status = 'testing'; c.color = '#a78bfa'; changed = true; }
   });
   if (changed) saveCustomLevelsAll(customs);
 }
-// 发布关卡（pending → published）
-function publishCustomLevel(id) {
+// 测试发布关卡（draft → testing，仅管理员可见）
+function testPublishLevel(id) {
   const customs = getCustomLevelsAll();
   const idx = customs.findIndex(c => c.id === id);
   if (idx < 0) return null;
   const lvl = customs[idx];
+  lvl.status = 'testing';
+  lvl.color = '#a78bfa';
+  lvl.updatedAt = Date.now();
+  saveCustomLevelsAll(customs);
+  return lvl;
+}
+// 正式发布关卡（draft/testing → published，所有人可见）
+function publishCustomLevel(id, options) {
+  const customs = getCustomLevelsAll();
+  const idx = customs.findIndex(c => c.id === id);
+  if (idx < 0) return null;
+  const lvl = customs[idx];
+  const opts = options || {};
   // 如果有同名已上线关卡，下线旧版本
   const oldPublished = customs.findIndex(c => c.name === lvl.name && c.status === 'published' && c.id !== id);
   if (oldPublished >= 0) { customs[oldPublished].status = 'draft'; customs[oldPublished].desc = '[旧版本] ' + customs[oldPublished].desc; }
   lvl.status = 'published';
-  lvl.color = '#ff8800';
+  lvl.color = opts.color || '#ff8800';
+  lvl.difficulty = opts.difficulty || lvl.difficulty || '自定义';
+  lvl.icon = opts.icon || lvl.icon || '🛠';
+  lvl.sortOrder = typeof opts.sortOrder === 'number' ? opts.sortOrder : (lvl.sortOrder || 999);
   lvl.version = (lvl.version || 0) + 1;
   lvl.updatedAt = Date.now();
   saveCustomLevelsAll(customs);
@@ -1776,11 +1827,11 @@ function renderLevelManagerList(filter) {
 
   let filtered = customs;
   if (filter === 'published') filtered = customs.filter(c => c.status === 'published');
-  else if (filter === 'pending') filtered = customs.filter(c => c.status === 'pending');
+  else if (filter === 'testing') filtered = customs.filter(c => c.status === 'testing');
   else if (filter === 'draft') filtered = customs.filter(c => c.status === 'draft');
 
   if (filtered.length === 0) {
-    const labels = { all: '暂无关卡', published: '暂无已上线关卡', pending: '暂无待发布关卡', draft: '暂无草稿关卡' };
+    const labels = { all: '暂无关卡', published: '暂无已上线关卡', testing: '暂无测试中关卡', draft: '暂无草稿关卡' };
     list.innerHTML = '<div class="lm-empty">' + (labels[filter] || '暂无关卡') + '</div>';
     return;
   }
@@ -1791,10 +1842,34 @@ function renderLevelManagerList(filter) {
   list.innerHTML = '';
   filtered.forEach(lvl => {
     const status = lvl.status || 'published';
-    const statusLabel = status === 'published' ? '已上线' : status === 'pending' ? '待发布' : '草稿';
+    const statusLabel = status === 'published' ? '已上线' : status === 'testing' ? '测试中' : '草稿';
     const objCount = lvl.editorData && lvl.editorData.objects ? lvl.editorData.objects.length : 0;
     const timeStr = lvl.updatedAt ? new Date(lvl.updatedAt).toLocaleString() : (lvl.createdAt ? new Date(lvl.createdAt).toLocaleString() : '-');
     const sourceInfo = lvl.sourceId ? ' · 基于「' + (lvl.sourceName || '未知') + '」' : '';
+    const sortInfo = status === 'published' && lvl.sortOrder ? ' · 排序:' + lvl.sortOrder : '';
+
+    // 构建操作按钮
+    let actionsHtml = '';
+    // 编辑按钮
+    if (status === 'published') {
+      actionsHtml += '<button class="lm-action edit" data-id="' + lvl.id + '" data-action="clone-edit" title="编辑已上线关卡会创建一个副本">📝 编辑副本</button>';
+    } else {
+      actionsHtml += '<button class="lm-action edit" data-id="' + lvl.id + '" data-action="edit" title="编辑此关卡">✏️ 编辑</button>';
+    }
+    // 发布按钮
+    if (status === 'draft') {
+      actionsHtml += '<button class="lm-action test-publish" data-id="' + lvl.id + '" data-action="test-publish" title="测试发布（仅管理员可见）">🧪 测试发布</button>';
+      actionsHtml += '<button class="lm-action publish" data-id="' + lvl.id + '" data-action="official-publish" title="正式发布（所有人可见）">🚀 正式发布</button>';
+    }
+    if (status === 'testing') {
+      actionsHtml += '<button class="lm-action publish" data-id="' + lvl.id + '" data-action="official-publish" title="正式发布（所有人可见）">🚀 正式发布</button>';
+      actionsHtml += '<button class="lm-action unpublish" data-id="' + lvl.id + '" data-action="unpublish" title="下线回草稿">⏬ 下线</button>';
+    }
+    if (status === 'published') {
+      actionsHtml += '<button class="lm-action unpublish" data-id="' + lvl.id + '" data-action="unpublish" title="下线此关卡">⏬ 下线</button>';
+    }
+    // 删除按钮
+    actionsHtml += '<button class="lm-action delete" data-id="' + lvl.id + '" data-action="delete" data-name="' + lvl.name + '" title="删除此关卡">🗑</button>';
 
     const div = document.createElement('div');
     div.className = 'lm-item';
@@ -1808,15 +1883,13 @@ function renderLevelManagerList(filter) {
           <span>📐 ${lvl.mapSize || 120}</span>
           <span>v${lvl.version || 1}</span>
           <span>🕐 ${timeStr}</span>
+          ${status === 'published' ? '<span>难度:' + (lvl.difficulty || '自定义') + '</span>' : ''}
+          ${sortInfo ? '<span>' + sortInfo + '</span>' : ''}
           ${sourceInfo ? '<span>' + sourceInfo + '</span>' : ''}
         </div>
       </div>
       <div class="lm-item-actions">
-        ${status === 'published' ? '<button class="lm-action edit" data-id="' + lvl.id + '" data-action="clone-edit" title="编辑已上线关卡会创建一个副本">📝 编辑副本</button>' : '<button class="lm-action edit" data-id="' + lvl.id + '" data-action="edit" title="编辑此关卡">✏️ 编辑</button>'}
-        ${status === 'draft' ? '<button class="lm-action publish" data-id="' + lvl.id + '" data-action="submit" title="提交到待发布">📤 提交发布</button>' : ''}
-        ${status === 'pending' ? '<button class="lm-action publish" data-id="' + lvl.id + '" data-action="publish" title="确认发布到游戏">✅ 发布</button>' : ''}
-        ${status === 'published' ? '<button class="lm-action unpublish" data-id="' + lvl.id + '" data-action="unpublish" title="下线此关卡">⏬ 下线</button>' : ''}
-        <button class="lm-action delete" data-id="${lvl.id}" data-action="delete" data-name="${lvl.name}" title="删除此关卡">🗑</button>
+        ${actionsHtml}
       </div>
     `;
     list.appendChild(div);
@@ -1840,7 +1913,7 @@ function handleLevelManagerAction(id, action, name) {
 
   switch(action) {
     case 'edit':
-      // 直接打开编辑（草稿/待发布）
+      // 直接打开编辑（草稿/测试中）
       loadLevelIntoEditor(lvl);
       closeModal('levelManagerModal');
       showToast('✏️ 正在编辑: ' + lvl.name);
@@ -1858,18 +1931,21 @@ function handleLevelManagerAction(id, action, name) {
       }
       break;
 
-    case 'submit':
-      // 草稿 → 待发布
-      lvl.status = 'pending';
-      lvl.color = '#fbbf24';
-      lvl.updatedAt = Date.now();
-      saveCustomLevelsAll(customs);
-      renderLevelManagerList(document.querySelector('.lm-tab.active').dataset.tab);
-      showToast('📤 已提交到待发布: ' + lvl.name);
+    case 'test-publish':
+      // 草稿 → 测试发布（仅管理员可见）
+      if (confirm('确定将「' + lvl.name + '」测试发布？\n测试发布后仅管理员可在游戏关卡选择中看到。')) {
+        const result = testPublishLevel(id);
+        if (result) {
+          renderLevelManagerList(document.querySelector('.lm-tab.active').dataset.tab);
+          showToast('🧪 已测试发布: ' + lvl.name);
+        } else {
+          showToast('测试发布失败', true);
+        }
+      }
       break;
 
-    case 'publish':
-      // 待发布 → 确认发布弹窗
+    case 'official-publish':
+      // 打开正式发布配置弹窗
       _pendingPublishId = id;
       const body = document.getElementById('publishConfirmBody');
       const hasOld = customs.find(c => c.name === lvl.name && c.status === 'published' && c.id !== id);
@@ -1877,16 +1953,17 @@ function handleLevelManagerAction(id, action, name) {
         '<strong>对象数量:</strong> ' + ((lvl.editorData && lvl.editorData.objects) ? lvl.editorData.objects.length : 0) + '<br>' +
         '<strong>地图尺寸:</strong> ' + (lvl.mapSize || 120) + '<br><br>' +
         (hasOld ? '<span style="color:#fbbf24;">⚠️ 注意: 已存在同名已上线关卡「' + lvl.name + '」，发布后旧版本将被自动下线。</span><br><br>' : '') +
-        '确认要发布此关卡吗？发布后将在游戏关卡选择中可见。';
+        '配置完成后点击「正式发布」，发布后所有玩家均可在游戏中看到。';
+      // 设置默认值
+      document.getElementById('publishDifficulty').value = lvl.difficulty || '中等';
+      document.getElementById('publishIcon').value = lvl.icon || '🛠';
+      document.getElementById('publishSortOrder').value = lvl.sortOrder || 100;
       document.getElementById('publishConfirmModal').classList.add('show');
       break;
 
     case 'unpublish':
-      if (confirm('确定下线关卡「' + lvl.name + '」？\n下线后将在游戏关卡选择中不再可见。')) {
-        lvl.status = 'draft';
-        lvl.color = '#64748b';
-        lvl.updatedAt = Date.now();
-        saveCustomLevelsAll(customs);
+      if (confirm('确定下线关卡「' + lvl.name + '」？\n下线后将回到草稿状态。')) {
+        unpublishCustomLevel(id);
         renderLevelManagerList(document.querySelector('.lm-tab.active').dataset.tab);
         showToast('⏬ 已下线: ' + lvl.name);
       }
@@ -1910,10 +1987,22 @@ function handleLevelManagerAction(id, action, name) {
 
 function doPublishLevel() {
   if (!_pendingPublishId) return;
-  const result = publishCustomLevel(_pendingPublishId);
+  // 从弹窗读取配置
+  const difficulty = document.getElementById('publishDifficulty').value;
+  const icon = document.getElementById('publishIcon').value;
+  const sortOrder = parseInt(document.getElementById('publishSortOrder').value) || 100;
+  // 难度对应颜色
+  const diffColorMap = { '简单': '#4ade80', '中等': '#fbbf24', '困难': '#f87171', '地狱': '#dc2626', '自定义': '#ff8800' };
+  const options = {
+    difficulty: difficulty,
+    icon: icon,
+    sortOrder: sortOrder,
+    color: diffColorMap[difficulty] || '#ff8800'
+  };
+  const result = publishCustomLevel(_pendingPublishId, options);
   closeModal('publishConfirmModal');
   if (result) {
-    showToast('✅ 已发布: ' + result.name + ' (v' + result.version + ')');
+    showToast('🚀 已正式发布: ' + result.name + ' (v' + result.version + ') · 难度:' + difficulty);
     renderLevelManagerList(document.querySelector('.lm-tab.active').dataset.tab);
   } else {
     showToast('发布失败', true);

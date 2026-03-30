@@ -181,7 +181,7 @@ const LEVELS=[
 let currentLevelIndex=-1;
 
 // ===== 自定义关卡存储管理（带状态） =====
-// 状态: published(已上线), pending(待发布), draft(草稿)
+// 状态: published(正式上线), testing(测试发布,仅管理员可见), draft(草稿)
 const CUSTOM_LEVELS_KEY='starPartyCustomLevels';
 function getCustomLevels(){
   try{return JSON.parse(localStorage.getItem(CUSTOM_LEVELS_KEY))||[];}
@@ -190,25 +190,28 @@ function getCustomLevels(){
 function saveCustomLevels(levels){
   localStorage.setItem(CUSTOM_LEVELS_KEY,JSON.stringify(levels));
 }
-// 获取已上线关卡
+// 获取正式上线关卡（玩家+管理员均可见）
 function getPublishedLevels(){return getCustomLevels().filter(c=>c.status==='published');}
-// 获取待发布关卡
-function getPendingLevels(){return getCustomLevels().filter(c=>c.status==='pending');}
+// 获取测试发布关卡（仅管理员可见）
+function getTestingLevels(){return getCustomLevels().filter(c=>c.status==='testing');}
 // 获取草稿关卡
 function getDraftLevels(){return getCustomLevels().filter(c=>c.status==='draft');}
+// 兼容旧接口
+function getPendingLevels(){return getCustomLevels().filter(c=>c.status==='pending'||c.status==='testing');}
 
 function addCustomLevel(levelData,status){
   const customs=getCustomLevels();
   const s=status||'published';
   // 如果是 published 且有同名已上线关卡，替换
   const existIdx=(s==='published')?customs.findIndex(c=>c.name===levelData.name&&c.status==='published'):-1;
+  const colorMap={published:'#ff8800',testing:'#a78bfa',pending:'#fbbf24',draft:'#64748b'};
   const entry={
     id:'custom_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
     name:levelData.name||'自定义关卡',
     desc:'编辑器自定义关卡 ('+((levelData.objects||[]).length)+'个对象)',
     icon:'🛠',
     difficulty:'自定义',
-    color: s==='published'?'#ff8800':s==='pending'?'#fbbf24':'#64748b',
+    color: colorMap[s]||'#64748b',
     mapSize:levelData.mapSize||120,
     timer:300,
     isCustom:true,
@@ -247,23 +250,39 @@ function removeCustomLevel(name){
   const idx=customs.findIndex(c=>c.name===name);
   if(idx>=0){customs.splice(idx,1);saveCustomLevels(customs);}
 }
-// 发布关卡（pending → published）
-function publishCustomLevel(id){
+// 测试发布关卡（draft/pending → testing，仅管理员可见）
+function testPublishLevel(id){
   const customs=getCustomLevels();
   const idx=customs.findIndex(c=>c.id===id);
   if(idx<0)return null;
   const lvl=customs[idx];
+  lvl.status='testing';
+  lvl.color='#a78bfa';
+  lvl.updatedAt=Date.now();
+  saveCustomLevels(customs);
+  return lvl;
+}
+// 正式发布关卡（draft/testing/pending → published，所有人可见）
+function publishCustomLevel(id,options){
+  const customs=getCustomLevels();
+  const idx=customs.findIndex(c=>c.id===id);
+  if(idx<0)return null;
+  const lvl=customs[idx];
+  const opts=options||{};
   // 如果有同名已上线关卡，下线旧版本
   const oldPublished=customs.findIndex(c=>c.name===lvl.name&&c.status==='published'&&c.id!==id);
   if(oldPublished>=0){customs[oldPublished].status='draft';customs[oldPublished].desc='[旧版本] '+customs[oldPublished].desc;}
   lvl.status='published';
-  lvl.color='#ff8800';
+  lvl.color=opts.color||'#ff8800';
+  lvl.difficulty=opts.difficulty||lvl.difficulty||'自定义';
+  lvl.icon=opts.icon||lvl.icon||'🛠';
+  lvl.sortOrder=typeof opts.sortOrder==='number'?opts.sortOrder:(lvl.sortOrder||999);
   lvl.version=(lvl.version||0)+1;
   lvl.updatedAt=Date.now();
   saveCustomLevels(customs);
   return lvl;
 }
-// 下线关卡（published → draft）
+// 下线关卡（published/testing → draft）
 function unpublishCustomLevel(id){
   return updateCustomLevelById(id,{status:'draft',color:'#64748b'});
 }
@@ -294,12 +313,13 @@ function cloneLevelAsDraft(id){
   saveCustomLevels(customs);
   return clone;
 }
-// 迁移旧数据：为没有 status 字段的关卡补上 published 状态
+// 迁移旧数据：为没有 status 字段的关卡补上 published 状态，pending→testing
 function migrateCustomLevels(){
   const customs=getCustomLevels();
   let changed=false;
   customs.forEach(c=>{
     if(!c.status){c.status='published';c.color='#ff8800';c.version=c.version||1;c.updatedAt=c.updatedAt||c.createdAt||Date.now();changed=true;}
+    if(c.status==='pending'){c.status='testing';c.color='#a78bfa';changed=true;}
   });
   if(changed)saveCustomLevels(customs);
 }
