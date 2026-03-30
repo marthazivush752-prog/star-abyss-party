@@ -180,7 +180,8 @@ const LEVELS=[
 // 当前选择的关卡 (-1 表示快速开始/默认)
 let currentLevelIndex=-1;
 
-// 自定义关卡存储管理（编辑器保存到游戏选择列表）
+// ===== 自定义关卡存储管理（带状态） =====
+// 状态: published(已上线), pending(待发布), draft(草稿)
 const CUSTOM_LEVELS_KEY='starPartyCustomLevels';
 function getCustomLevels(){
   try{return JSON.parse(localStorage.getItem(CUSTOM_LEVELS_KEY))||[];}
@@ -189,32 +190,118 @@ function getCustomLevels(){
 function saveCustomLevels(levels){
   localStorage.setItem(CUSTOM_LEVELS_KEY,JSON.stringify(levels));
 }
-function addCustomLevel(levelData){
+// 获取已上线关卡
+function getPublishedLevels(){return getCustomLevels().filter(c=>c.status==='published');}
+// 获取待发布关卡
+function getPendingLevels(){return getCustomLevels().filter(c=>c.status==='pending');}
+// 获取草稿关卡
+function getDraftLevels(){return getCustomLevels().filter(c=>c.status==='draft');}
+
+function addCustomLevel(levelData,status){
   const customs=getCustomLevels();
-  // 查找是否已存在同名关卡
-  const existIdx=customs.findIndex(c=>c.name===levelData.name);
+  const s=status||'published';
+  // 如果是 published 且有同名已上线关卡，替换
+  const existIdx=(s==='published')?customs.findIndex(c=>c.name===levelData.name&&c.status==='published'):-1;
   const entry={
-    id:'custom_'+Date.now(),
+    id:'custom_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
     name:levelData.name||'自定义关卡',
     desc:'编辑器自定义关卡 ('+((levelData.objects||[]).length)+'个对象)',
     icon:'🛠',
     difficulty:'自定义',
-    color:'#ff8800',
+    color: s==='published'?'#ff8800':s==='pending'?'#fbbf24':'#64748b',
     mapSize:levelData.mapSize||120,
     timer:300,
     isCustom:true,
-    editorData:levelData, // 完整编辑器数据
-    createdAt:Date.now()
+    status:s,
+    version:1,
+    editorData:levelData,
+    createdAt:Date.now(),
+    updatedAt:Date.now()
   };
-  if(existIdx>=0){customs[existIdx]=entry;}
+  if(existIdx>=0){entry.id=customs[existIdx].id;entry.version=(customs[existIdx].version||1);customs[existIdx]=entry;}
   else{customs.push(entry);}
   saveCustomLevels(customs);
   return entry;
 }
+// 通过ID更新关卡
+function updateCustomLevelById(id,updates){
+  const customs=getCustomLevels();
+  const idx=customs.findIndex(c=>c.id===id);
+  if(idx>=0){
+    Object.assign(customs[idx],updates);
+    customs[idx].updatedAt=Date.now();
+    saveCustomLevels(customs);
+    return customs[idx];
+  }
+  return null;
+}
+// 通过ID删除关卡
+function removeCustomLevelById(id){
+  const customs=getCustomLevels();
+  const idx=customs.findIndex(c=>c.id===id);
+  if(idx>=0){customs.splice(idx,1);saveCustomLevels(customs);}
+}
+// 兼容旧接口
 function removeCustomLevel(name){
   const customs=getCustomLevels();
   const idx=customs.findIndex(c=>c.name===name);
   if(idx>=0){customs.splice(idx,1);saveCustomLevels(customs);}
+}
+// 发布关卡（pending → published）
+function publishCustomLevel(id){
+  const customs=getCustomLevels();
+  const idx=customs.findIndex(c=>c.id===id);
+  if(idx<0)return null;
+  const lvl=customs[idx];
+  // 如果有同名已上线关卡，下线旧版本
+  const oldPublished=customs.findIndex(c=>c.name===lvl.name&&c.status==='published'&&c.id!==id);
+  if(oldPublished>=0){customs[oldPublished].status='draft';customs[oldPublished].desc='[旧版本] '+customs[oldPublished].desc;}
+  lvl.status='published';
+  lvl.color='#ff8800';
+  lvl.version=(lvl.version||0)+1;
+  lvl.updatedAt=Date.now();
+  saveCustomLevels(customs);
+  return lvl;
+}
+// 下线关卡（published → draft）
+function unpublishCustomLevel(id){
+  return updateCustomLevelById(id,{status:'draft',color:'#64748b'});
+}
+// 克隆已上线关卡为草稿（用于编辑已上线关卡）
+function cloneLevelAsDraft(id){
+  const customs=getCustomLevels();
+  const src=customs.find(c=>c.id===id);
+  if(!src)return null;
+  const clone={
+    id:'custom_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
+    name:src.name+' (副本)',
+    desc:'基于「'+src.name+'」的编辑副本',
+    icon:'📝',
+    difficulty:'自定义',
+    color:'#64748b',
+    mapSize:src.mapSize||120,
+    timer:src.timer||300,
+    isCustom:true,
+    status:'draft',
+    version:1,
+    editorData:JSON.parse(JSON.stringify(src.editorData)),
+    sourceId:src.id,
+    sourceName:src.name,
+    createdAt:Date.now(),
+    updatedAt:Date.now()
+  };
+  customs.push(clone);
+  saveCustomLevels(customs);
+  return clone;
+}
+// 迁移旧数据：为没有 status 字段的关卡补上 published 状态
+function migrateCustomLevels(){
+  const customs=getCustomLevels();
+  let changed=false;
+  customs.forEach(c=>{
+    if(!c.status){c.status='published';c.color='#ff8800';c.version=c.version||1;c.updatedAt=c.updatedAt||c.createdAt||Date.now();changed=true;}
+  });
+  if(changed)saveCustomLevels(customs);
 }
 
 // 关卡进度管理

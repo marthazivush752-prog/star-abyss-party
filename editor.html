@@ -265,6 +265,62 @@ body.resizing * { cursor: col-resize !important; }
   border-color: #ff8800 !important;
   box-shadow: 0 0 12px rgba(255,136,0,0.3);
 }
+
+/* ===== 关卡管理台 ===== */
+.lm-tabs {
+  display: flex; gap: 4px; margin-bottom: 16px;
+  border-bottom: 1px solid #334155; padding-bottom: 12px;
+}
+.lm-tab {
+  padding: 6px 16px; font-size: 13px; color: #94a3b8;
+  background: transparent; border: 1px solid transparent;
+  border-radius: 6px; cursor: pointer; transition: all 0.2s;
+  letter-spacing: 1px;
+}
+.lm-tab:hover { color: #fff; background: #1e293b; }
+.lm-tab.active { color: #0ff; background: rgba(0,255,255,0.1); border-color: rgba(0,255,255,0.3); }
+.lm-list {
+  max-height: 450px; overflow-y: auto;
+  min-height: 200px;
+}
+.lm-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; margin-bottom: 6px;
+  background: #0f172a; border: 1px solid #1e293b;
+  border-radius: 8px; transition: all 0.2s;
+}
+.lm-item:hover { border-color: #334155; background: #1a2540; }
+.lm-item-icon { font-size: 28px; flex-shrink: 0; }
+.lm-item-info { flex: 1; min-width: 0; }
+.lm-item-name { font-size: 14px; color: #fff; font-weight: bold; margin-bottom: 3px; display: flex; align-items: center; gap: 8px; }
+.lm-item-desc { font-size: 11px; color: #94a3b8; line-height: 1.5; }
+.lm-item-meta { font-size: 10px; color: #64748b; margin-top: 3px; display: flex; gap: 12px; }
+.lm-status {
+  padding: 2px 8px; border-radius: 10px; font-size: 10px;
+  letter-spacing: 1px; font-weight: bold; flex-shrink: 0;
+}
+.lm-status.published { background: rgba(0,255,136,0.15); color: #4ade80; border: 1px solid rgba(0,255,136,0.3); }
+.lm-status.pending { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+.lm-status.draft { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); }
+.lm-item-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.lm-action {
+  padding: 4px 10px; font-size: 11px; border-radius: 5px;
+  cursor: pointer; transition: all 0.2s; border: 1px solid transparent;
+  color: #94a3b8; background: transparent;
+}
+.lm-action:hover { color: #fff; background: #1e293b; border-color: #334155; }
+.lm-action.edit { color: #0ff; }
+.lm-action.edit:hover { background: rgba(0,255,255,0.1); border-color: rgba(0,255,255,0.3); }
+.lm-action.publish { color: #4ade80; }
+.lm-action.publish:hover { background: rgba(74,222,128,0.1); border-color: rgba(74,222,128,0.3); }
+.lm-action.unpublish { color: #fbbf24; }
+.lm-action.unpublish:hover { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.3); }
+.lm-action.delete { color: #f87171; }
+.lm-action.delete:hover { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.3); }
+.lm-empty {
+  color: #64748b; font-size: 13px; text-align: center; padding: 40px;
+  letter-spacing: 1px;
+}
 </style>
 </head>
 <body>
@@ -294,7 +350,8 @@ body.resizing * { cursor: col-resize !important; }
   </div>
   <div class="tb-spacer"></div>
   <div class="tb-group">
-    <button class="tb-btn success" id="btnSaveToGame" style="color:#ff8800;border-color:rgba(255,136,0,0.5);background:rgba(255,136,0,0.1);" title="保存时会自动同步到游戏关卡">📥 保存到游戏</button>
+    <button class="tb-btn success" id="btnSaveToGame" style="color:#ff8800;border-color:rgba(255,136,0,0.5);background:rgba(255,136,0,0.1);" title="保存为草稿关卡">📥 保存草稿</button>
+    <button class="tb-btn primary" id="btnLevelManager" title="关卡编辑台：管理所有关卡">📋 关卡管理台</button>
     <button class="tb-btn" id="btnExport">💾 导出</button>
     <button class="tb-btn" id="btnImport">📂 导入</button>
     <button class="tb-btn danger" id="btnClear">🗑 清空</button>
@@ -327,7 +384,9 @@ body.resizing * { cursor: col-resize !important; }
         <div class="prop-row">
           <span class="prop-label">名称</span>
           <input class="prop-input" type="text" id="mapName" value="新关卡" maxlength="30">
+          <button class="tb-btn" id="btnRenameSave" title="确认重命名并更新已保存的关卡" style="padding:4px 8px;font-size:11px;">✏️</button>
         </div>
+        <div id="levelIdInfo" style="font-size:10px;color:#64748b;padding:0 14px 6px;display:none;">ID: <span id="levelIdText">-</span></div>
         <div class="prop-row">
           <span class="prop-label">尺寸</span>
           <input class="prop-input" type="number" id="mapSize" value="120" min="50" max="300">
@@ -468,6 +527,39 @@ body.resizing * { cursor: col-resize !important; }
   <iframe class="live-preview-iframe" id="livePreviewFrame"></iframe>
 </div>
 
+<!-- 关卡管理台 -->
+<div class="modal-overlay" id="levelManagerModal">
+  <div class="modal" style="min-width:700px;max-width:900px;">
+    <div class="modal-title">📋 关卡编辑台</div>
+    <div class="lm-tabs">
+      <button class="lm-tab active" data-tab="published">🟢 已上线</button>
+      <button class="lm-tab" data-tab="pending">🟡 待发布</button>
+      <button class="lm-tab" data-tab="draft">⚪ 草稿</button>
+      <button class="lm-tab" data-tab="all">📋 全部</button>
+    </div>
+    <div class="lm-list" id="lmList">
+      <div style="color:#64748b;font-size:13px;text-align:center;padding:40px;">加载中...</div>
+    </div>
+    <div class="modal-actions">
+      <button class="tb-btn" id="btnLmClose">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 发布确认弹窗 -->
+<div class="modal-overlay" id="publishConfirmModal">
+  <div class="modal" style="min-width:380px;max-width:480px;">
+    <div class="modal-title" style="color:#ffcc00;">⚠️ 发布确认</div>
+    <div id="publishConfirmBody" style="color:#ccc;font-size:14px;line-height:1.8;margin-bottom:16px;">
+      确认要发布此关卡吗？发布后将在游戏关卡选择中可见。
+    </div>
+    <div class="modal-actions">
+      <button class="tb-btn" id="btnPublishCancel">取消</button>
+      <button class="tb-btn success" id="btnPublishConfirm" style="color:#4ade80;border-color:rgba(74,222,128,0.5);">✅ 确认发布</button>
+    </div>
+  </div>
+</div>
+
 <!-- 通知 -->
 <div class="toast" id="toast"></div>
 
@@ -481,6 +573,7 @@ const EDITOR = {
   selected: null, dragging: false, dragStart: null,
   isPanning: false, panStart: null,
   objects: [], undoStack: [], redoStack: [],
+  currentLevelId: null, // 当前编辑的关卡ID（用于更新已有关卡）
   layers: {
     buildings: { name: '建筑/障碍物', color: '#4488ff', icon: '🏗️', visible: true },
     enemies:   { name: '敌人', color: '#ff4444', icon: '👾', visible: true },
@@ -746,6 +839,8 @@ function bindEvents() {
   document.getElementById('btnSave').addEventListener('click', saveToLocal);
   document.getElementById('btnLoad').addEventListener('click', loadFromLocal);
   document.getElementById('btnSaveToGame').addEventListener('click', saveToGameLevels);
+  document.getElementById('btnLevelManager').addEventListener('click', openLevelManager);
+  document.getElementById('btnRenameSave').addEventListener('click', renameSaveLevel);
   document.getElementById('btnLivePreview').addEventListener('click', openLivePreview);
   document.getElementById('btnCloseLive').addEventListener('click', closeLivePreview);
   document.getElementById('btnSyncLive').addEventListener('click', syncToLivePreview);
@@ -761,6 +856,18 @@ function bindEvents() {
   document.getElementById('btnCloseImport').addEventListener('click', () => closeModal('importModal'));
   document.getElementById('btnClosePreview').addEventListener('click', closePreview3D);
   document.getElementById('fileInput').addEventListener('change', loadFile);
+  document.getElementById('btnLmClose').addEventListener('click', () => closeModal('levelManagerModal'));
+  document.getElementById('btnPublishCancel').addEventListener('click', () => closeModal('publishConfirmModal'));
+  document.getElementById('btnPublishConfirm').addEventListener('click', doPublishLevel);
+
+  // 关卡管理台 Tab 切换
+  document.querySelectorAll('.lm-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.lm-tab').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+      renderLevelManagerList(this.dataset.tab);
+    });
+  });
 
   // 新建地图模板选择
   document.querySelectorAll('.new-map-template').forEach(tpl => {
@@ -1181,22 +1288,46 @@ function autoSyncToGameLevels(data) {
   const CUSTOM_LEVELS_KEY = 'starPartyCustomLevels';
   let customs = [];
   try { customs = JSON.parse(localStorage.getItem(CUSTOM_LEVELS_KEY)) || []; } catch(e) { customs = []; }
-  const existIdx = customs.findIndex(c => c.name === data.name);
+
+  // 如果当前有绑定的关卡ID，直接更新该关卡
+  if (EDITOR.currentLevelId) {
+    const idx = customs.findIndex(c => c.id === EDITOR.currentLevelId);
+    if (idx >= 0) {
+      customs[idx].editorData = data;
+      customs[idx].name = data.name;
+      customs[idx].desc = '编辑器自定义关卡 (' + (data.objects || []).length + '个对象)';
+      customs[idx].mapSize = data.mapSize || 120;
+      customs[idx].updatedAt = Date.now();
+      localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customs));
+      return;
+    }
+  }
+
+  // 否则查找同名草稿关卡更新，或新建草稿
+  const existIdx = customs.findIndex(c => c.name === data.name && (c.status === 'draft' || !c.status));
   const entry = {
-    id: 'custom_' + Date.now(),
+    id: 'custom_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
     name: data.name || '自定义关卡',
     desc: '编辑器自定义关卡 (' + (data.objects || []).length + '个对象)',
-    icon: '🛠',
+    icon: '📝',
     difficulty: '自定义',
-    color: '#ff8800',
+    color: '#64748b',
     mapSize: data.mapSize || 120,
     timer: 300,
     isCustom: true,
+    status: 'draft',
+    version: 1,
     editorData: data,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    updatedAt: Date.now()
   };
-  if (existIdx >= 0) { customs[existIdx] = entry; }
-  else { customs.push(entry); }
+  if (existIdx >= 0) {
+    entry.id = customs[existIdx].id;
+    customs[existIdx] = entry;
+  } else {
+    customs.push(entry);
+  }
+  EDITOR.currentLevelId = entry.id;
   localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customs));
 }
 
@@ -1448,41 +1579,290 @@ function testInGame() {
   showToast('🎮 已在新标签页打开游戏测试');
 }
 
-// ===== 保存到游戏关卡选择列表 =====
+// ===== 保存到游戏关卡列表（保存为草稿） =====
 function saveToGameLevels() {
   // 先清除新增标记
   clearNewFlags();
   const data = generateLevelData();
-  // 使用 state.js 中定义的 addCustomLevel 方式存储
   const CUSTOM_LEVELS_KEY = 'starPartyCustomLevels';
   let customs = [];
   try { customs = JSON.parse(localStorage.getItem(CUSTOM_LEVELS_KEY)) || []; } catch(e) { customs = []; }
-  // 查找同名关卡
-  const existIdx = customs.findIndex(c => c.name === data.name);
+
+  // 如果当前关卡有绑定ID（正在编辑的草稿/待发布），直接更新
+  if (EDITOR.currentLevelId) {
+    const idx = customs.findIndex(c => c.id === EDITOR.currentLevelId);
+    if (idx >= 0) {
+      customs[idx].editorData = data;
+      customs[idx].name = data.name;
+      customs[idx].desc = '编辑器自定义关卡 (' + (data.objects || []).length + '个对象)';
+      customs[idx].mapSize = data.mapSize || 120;
+      customs[idx].updatedAt = Date.now();
+      localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customs));
+      showToast('💾 已更新: ' + data.name + ' (' + customs[idx].status + ')');
+      updateLevelIdDisplay();
+      redraw();
+      return;
+    }
+  }
+
+  // 新建草稿
   const entry = {
-    id: 'custom_' + Date.now(),
+    id: 'custom_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
     name: data.name || '自定义关卡',
     desc: '编辑器自定义关卡 (' + (data.objects || []).length + '个对象)',
-    icon: '🛠',
+    icon: '📝',
     difficulty: '自定义',
-    color: '#ff8800',
+    color: '#64748b',
     mapSize: data.mapSize || 120,
     timer: 300,
     isCustom: true,
+    status: 'draft',
+    version: 1,
     editorData: data,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    updatedAt: Date.now()
   };
-  if (existIdx >= 0) {
-    customs[existIdx] = entry;
-    showToast('📥 已更新游戏关卡: ' + data.name);
-  } else {
-    customs.push(entry);
-    showToast('📥 已保存到游戏关卡: ' + data.name);
-  }
+  customs.push(entry);
   localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customs));
+
+  // 绑定当前编辑的关卡ID
+  EDITOR.currentLevelId = entry.id;
+  updateLevelIdDisplay();
+  showToast('📝 已保存为草稿: ' + data.name);
   // 同时保存到本地编辑器存储
   localStorage.setItem('editorLevel_' + EDITOR.mapName, JSON.stringify(data));
   redraw();
+}
+
+// ===== 关卡名称重命名 =====
+function renameSaveLevel() {
+  const newName = document.getElementById('mapName').value.trim();
+  if (!newName) { showToast('关卡名称不能为空', true); return; }
+  const oldName = EDITOR.mapName;
+  EDITOR.mapName = newName;
+
+  // 如果有绑定的关卡ID，更新关卡名
+  if (EDITOR.currentLevelId) {
+    const CUSTOM_LEVELS_KEY = 'starPartyCustomLevels';
+    let customs = [];
+    try { customs = JSON.parse(localStorage.getItem(CUSTOM_LEVELS_KEY)) || []; } catch(e) { customs = []; }
+    const idx = customs.findIndex(c => c.id === EDITOR.currentLevelId);
+    if (idx >= 0) {
+      customs[idx].name = newName;
+      if (customs[idx].editorData) customs[idx].editorData.name = newName;
+      customs[idx].updatedAt = Date.now();
+      localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customs));
+    }
+  }
+
+  // 同时更新本地编辑器存储的key
+  if (oldName !== newName) {
+    const oldData = localStorage.getItem('editorLevel_' + oldName);
+    if (oldData) {
+      localStorage.removeItem('editorLevel_' + oldName);
+      try {
+        const parsed = JSON.parse(oldData);
+        parsed.name = newName;
+        localStorage.setItem('editorLevel_' + newName, JSON.stringify(parsed));
+      } catch(e) {}
+    }
+  }
+  showToast('✏️ 已重命名为: ' + newName);
+}
+
+// ===== 关卡ID显示 =====
+function updateLevelIdDisplay() {
+  const info = document.getElementById('levelIdInfo');
+  const text = document.getElementById('levelIdText');
+  if (EDITOR.currentLevelId) {
+    info.style.display = 'block';
+    text.textContent = EDITOR.currentLevelId.slice(0, 20) + '...';
+  } else {
+    info.style.display = 'none';
+  }
+}
+
+// ===== 关卡管理台 =====
+let _pendingPublishId = null;
+
+function openLevelManager() {
+  // 迁移旧数据
+  migrateCustomLevels();
+  document.getElementById('levelManagerModal').classList.add('show');
+  // 默认显示"全部"
+  document.querySelectorAll('.lm-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.lm-tab[data-tab="all"]').classList.add('active');
+  renderLevelManagerList('all');
+}
+
+function renderLevelManagerList(filter) {
+  const list = document.getElementById('lmList');
+  let customs = [];
+  try { customs = JSON.parse(localStorage.getItem('starPartyCustomLevels')) || []; } catch(e) {}
+
+  let filtered = customs;
+  if (filter === 'published') filtered = customs.filter(c => c.status === 'published');
+  else if (filter === 'pending') filtered = customs.filter(c => c.status === 'pending');
+  else if (filter === 'draft') filtered = customs.filter(c => c.status === 'draft');
+
+  if (filtered.length === 0) {
+    const labels = { all: '暂无关卡', published: '暂无已上线关卡', pending: '暂无待发布关卡', draft: '暂无草稿关卡' };
+    list.innerHTML = '<div class="lm-empty">' + (labels[filter] || '暂无关卡') + '</div>';
+    return;
+  }
+
+  // 按更新时间降序排列
+  filtered.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+
+  list.innerHTML = '';
+  filtered.forEach(lvl => {
+    const status = lvl.status || 'published';
+    const statusLabel = status === 'published' ? '已上线' : status === 'pending' ? '待发布' : '草稿';
+    const objCount = lvl.editorData && lvl.editorData.objects ? lvl.editorData.objects.length : 0;
+    const timeStr = lvl.updatedAt ? new Date(lvl.updatedAt).toLocaleString() : (lvl.createdAt ? new Date(lvl.createdAt).toLocaleString() : '-');
+    const sourceInfo = lvl.sourceId ? ' · 基于「' + (lvl.sourceName || '未知') + '」' : '';
+
+    const div = document.createElement('div');
+    div.className = 'lm-item';
+    div.innerHTML = `
+      <div class="lm-item-icon">${lvl.icon || '🛠'}</div>
+      <div class="lm-item-info">
+        <div class="lm-item-name">${lvl.name} <span class="lm-status ${status}">${statusLabel}</span></div>
+        <div class="lm-item-desc">${lvl.desc || '编辑器自定义关卡'}</div>
+        <div class="lm-item-meta">
+          <span>📦 ${objCount}个对象</span>
+          <span>📐 ${lvl.mapSize || 120}</span>
+          <span>v${lvl.version || 1}</span>
+          <span>🕐 ${timeStr}</span>
+          ${sourceInfo ? '<span>' + sourceInfo + '</span>' : ''}
+        </div>
+      </div>
+      <div class="lm-item-actions">
+        ${status === 'published' ? '<button class="lm-action edit" data-id="' + lvl.id + '" data-action="clone-edit" title="编辑已上线关卡会创建一个副本">📝 编辑副本</button>' : '<button class="lm-action edit" data-id="' + lvl.id + '" data-action="edit" title="编辑此关卡">✏️ 编辑</button>'}
+        ${status === 'draft' ? '<button class="lm-action publish" data-id="' + lvl.id + '" data-action="submit" title="提交到待发布">📤 提交发布</button>' : ''}
+        ${status === 'pending' ? '<button class="lm-action publish" data-id="' + lvl.id + '" data-action="publish" title="确认发布到游戏">✅ 发布</button>' : ''}
+        ${status === 'published' ? '<button class="lm-action unpublish" data-id="' + lvl.id + '" data-action="unpublish" title="下线此关卡">⏬ 下线</button>' : ''}
+        <button class="lm-action delete" data-id="${lvl.id}" data-action="delete" data-name="${lvl.name}" title="删除此关卡">🗑</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+
+  // 绑定操作按钮事件
+  list.querySelectorAll('.lm-action').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const id = this.dataset.id;
+      const action = this.dataset.action;
+      handleLevelManagerAction(id, action, this.dataset.name);
+    });
+  });
+}
+
+function handleLevelManagerAction(id, action, name) {
+  const CUSTOM_LEVELS_KEY = 'starPartyCustomLevels';
+  let customs = [];
+  try { customs = JSON.parse(localStorage.getItem(CUSTOM_LEVELS_KEY)) || []; } catch(e) {}
+  const lvl = customs.find(c => c.id === id);
+  if (!lvl) { showToast('关卡不存在', true); return; }
+
+  switch(action) {
+    case 'edit':
+      // 直接打开编辑（草稿/待发布）
+      loadLevelIntoEditor(lvl);
+      closeModal('levelManagerModal');
+      showToast('✏️ 正在编辑: ' + lvl.name);
+      break;
+
+    case 'clone-edit':
+      // 克隆已上线关卡为草稿并编辑
+      const cloned = cloneLevelAsDraft(id);
+      if (cloned) {
+        loadLevelIntoEditor(cloned);
+        closeModal('levelManagerModal');
+        showToast('📝 已创建编辑副本: ' + cloned.name);
+      } else {
+        showToast('克隆失败', true);
+      }
+      break;
+
+    case 'submit':
+      // 草稿 → 待发布
+      lvl.status = 'pending';
+      lvl.color = '#fbbf24';
+      lvl.updatedAt = Date.now();
+      localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customs));
+      renderLevelManagerList(document.querySelector('.lm-tab.active').dataset.tab);
+      showToast('📤 已提交到待发布: ' + lvl.name);
+      break;
+
+    case 'publish':
+      // 待发布 → 确认发布弹窗
+      _pendingPublishId = id;
+      const body = document.getElementById('publishConfirmBody');
+      const hasOld = customs.find(c => c.name === lvl.name && c.status === 'published' && c.id !== id);
+      body.innerHTML = '<strong>关卡名称:</strong> ' + lvl.name + '<br>' +
+        '<strong>对象数量:</strong> ' + ((lvl.editorData && lvl.editorData.objects) ? lvl.editorData.objects.length : 0) + '<br>' +
+        '<strong>地图尺寸:</strong> ' + (lvl.mapSize || 120) + '<br><br>' +
+        (hasOld ? '<span style="color:#fbbf24;">⚠️ 注意: 已存在同名已上线关卡「' + lvl.name + '」，发布后旧版本将被自动下线。</span><br><br>' : '') +
+        '确认要发布此关卡吗？发布后将在游戏关卡选择中可见。';
+      document.getElementById('publishConfirmModal').classList.add('show');
+      break;
+
+    case 'unpublish':
+      if (confirm('确定下线关卡「' + lvl.name + '」？\n下线后将在游戏关卡选择中不再可见。')) {
+        lvl.status = 'draft';
+        lvl.color = '#64748b';
+        lvl.updatedAt = Date.now();
+        localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customs));
+        renderLevelManagerList(document.querySelector('.lm-tab.active').dataset.tab);
+        showToast('⏬ 已下线: ' + lvl.name);
+      }
+      break;
+
+    case 'delete':
+      if (confirm('确定永久删除关卡「' + (name || lvl.name) + '」？\n此操作不可撤销。')) {
+        customs.splice(customs.indexOf(lvl), 1);
+        localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customs));
+        renderLevelManagerList(document.querySelector('.lm-tab.active').dataset.tab);
+        // 如果正在编辑此关卡，清除绑定
+        if (EDITOR.currentLevelId === id) {
+          EDITOR.currentLevelId = null;
+          updateLevelIdDisplay();
+        }
+        showToast('🗑 已删除: ' + (name || lvl.name));
+      }
+      break;
+  }
+}
+
+function doPublishLevel() {
+  if (!_pendingPublishId) return;
+  const result = publishCustomLevel(_pendingPublishId);
+  closeModal('publishConfirmModal');
+  if (result) {
+    showToast('✅ 已发布: ' + result.name + ' (v' + result.version + ')');
+    renderLevelManagerList(document.querySelector('.lm-tab.active').dataset.tab);
+  } else {
+    showToast('发布失败', true);
+  }
+  _pendingPublishId = null;
+}
+
+// 将关卡数据加载到编辑器中进行编辑
+function loadLevelIntoEditor(lvl) {
+  if (!lvl || !lvl.editorData) { showToast('关卡数据为空', true); return; }
+  const data = lvl.editorData;
+  saveUndo();
+  EDITOR.objects = data.objects || [];
+  EDITOR.mapSize = data.mapSize || 120;
+  EDITOR.mapName = data.name || lvl.name || '未命名';
+  EDITOR.currentLevelId = lvl.id;
+  document.getElementById('mapSize').value = EDITOR.mapSize;
+  document.getElementById('mapName').value = EDITOR.mapName;
+  EDITOR.selected = null;
+  updateLevelIdDisplay();
+  updateObjectList(); updatePropsPanel(); buildLayerUI(); redraw();
 }
 
 // ===== 实时预览 =====

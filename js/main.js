@@ -785,6 +785,8 @@ function buildLevelGrid(){
   const grid=document.getElementById('levelGrid');grid.innerHTML='';
   const progress=getLevelProgress();
   const admin=isAdmin();
+  // 迁移旧数据
+  migrateCustomLevels();
   // 管理员标识
   if(admin){
     const adminTag=document.createElement('div');
@@ -811,26 +813,26 @@ function buildLevelGrid(){
     }
     grid.appendChild(card);
   });
-  // 自定义关卡分隔线
-  const customs=getCustomLevels();
-  if(customs.length>0){
+  // ===== 已上线的自定义关卡 =====
+  const published=getPublishedLevels();
+  if(published.length>0){
     const separator=document.createElement('div');
     separator.className='level-grid-separator';
-    separator.innerHTML='<span class="separator-line"></span><span class="separator-text">🛠 编辑器自定义关卡</span><span class="separator-line"></span>';
+    separator.innerHTML='<span class="separator-line"></span><span class="separator-text">🟢 已上线自定义关卡</span><span class="separator-line"></span>';
     grid.appendChild(separator);
-    customs.forEach((clvl,ci)=>{
+    published.forEach((clvl)=>{
       const card=document.createElement('div');
       card.className='level-card unlocked custom-level-card';
       const objCount=clvl.editorData&&clvl.editorData.objects?clvl.editorData.objects.length:0;
-      const timeStr=clvl.createdAt?new Date(clvl.createdAt).toLocaleDateString():'';
+      const timeStr=clvl.updatedAt?new Date(clvl.updatedAt).toLocaleDateString():(clvl.createdAt?new Date(clvl.createdAt).toLocaleDateString():'');
       card.innerHTML=`
         <div class="level-card-icon">${clvl.icon||'🛠'}</div>
         <div class="level-card-name">${clvl.name}</div>
         <div class="level-card-diff" style="color:${clvl.color||'#ff8800'}">${clvl.difficulty||'自定义'}</div>
         <div class="level-card-desc">${clvl.desc||'编辑器自定义关卡'}</div>
-        <div class="custom-level-meta">${objCount}个对象${timeStr?' · '+timeStr:''}</div>
+        <div class="custom-level-meta">${objCount}个对象${timeStr?' · '+timeStr:''} · v${clvl.version||1}</div>
         <div class="level-card-play">点击开始</div>
-        ${admin?'<button class="custom-level-delete" data-idx="'+ci+'" title="删除此关卡">✕</button>':''}
+        ${admin?'<button class="custom-level-delete" data-id="'+clvl.id+'" title="下线此关卡">⏬</button>':''}
       `;
       card.addEventListener('click',(e)=>{
         if(e.target.classList.contains('custom-level-delete'))return;
@@ -840,18 +842,58 @@ function buildLevelGrid(){
       if(delBtn){
         delBtn.addEventListener('click',(e)=>{
           e.stopPropagation();
-          if(confirm('确定删除自定义关卡 "'+clvl.name+'" ？')){
-            removeCustomLevel(clvl.name);
+          if(confirm('确定下线关卡 "'+clvl.name+'" ？\n下线后不会被删除，可在编辑器管理台重新发布。')){
+            unpublishCustomLevel(clvl.id);
             buildLevelGrid();
-            showToastInGame('已删除: '+clvl.name);
+            showToastInGame('⏬ 已下线: '+clvl.name);
           }
         });
       }
       grid.appendChild(card);
     });
   }
-  // 管理员：上传关卡入口
+  // ===== 管理员：待发布关卡 =====
   if(admin){
+    const pending=getPendingLevels();
+    if(pending.length>0){
+      const sepPending=document.createElement('div');
+      sepPending.className='level-grid-separator';
+      sepPending.innerHTML='<span class="separator-line" style="background:linear-gradient(90deg,transparent,rgba(251,191,36,0.4),transparent);"></span><span class="separator-text" style="color:#fbbf24;">🟡 待发布关卡 (需确认发布)</span><span class="separator-line" style="background:linear-gradient(90deg,transparent,rgba(251,191,36,0.4),transparent);"></span>';
+      grid.appendChild(sepPending);
+      pending.forEach((plvl)=>{
+        const card=document.createElement('div');
+        card.className='level-card unlocked custom-level-card';
+        card.style.borderColor='rgba(251,191,36,0.4)';
+        card.style.background='linear-gradient(135deg, rgba(40,35,0,0.9), rgba(30,25,0,0.95))';
+        const objCount=plvl.editorData&&plvl.editorData.objects?plvl.editorData.objects.length:0;
+        card.innerHTML=`
+          <div class="level-card-icon">📦</div>
+          <div class="level-card-name">${plvl.name} <span style="font-size:10px;color:#fbbf24;font-weight:normal;">待发布</span></div>
+          <div class="level-card-diff" style="color:#fbbf24">等待发布</div>
+          <div class="level-card-desc">${plvl.desc||'等待管理员确认发布'}</div>
+          <div class="custom-level-meta">${objCount}个对象 · v${plvl.version||1}</div>
+          <div class="level-card-play" style="color:#fbbf24;">点击预览</div>
+          <button class="custom-level-delete" data-id="${plvl.id}" data-action="publish" title="确认发布" style="background:rgba(74,222,128,0.2);border-color:rgba(74,222,128,0.4);color:#4ade80;">✅</button>
+        `;
+        card.addEventListener('click',(e)=>{
+          if(e.target.classList.contains('custom-level-delete'))return;
+          startCustomLevelGame(plvl);
+        });
+        const pubBtn=card.querySelector('.custom-level-delete');
+        if(pubBtn){
+          pubBtn.addEventListener('click',(e)=>{
+            e.stopPropagation();
+            if(confirm('确认发布关卡「'+plvl.name+'」到游戏中？\n发布后玩家可在关卡选择中看到此关卡。')){
+              publishCustomLevel(plvl.id);
+              buildLevelGrid();
+              showToastInGame('✅ 已发布: '+plvl.name);
+            }
+          });
+        }
+        grid.appendChild(card);
+      });
+    }
+    // 上传关卡入口
     const uploadSection=document.createElement('div');
     uploadSection.style.cssText='grid-column:1/-1;text-align:center;margin-top:16px;';
     uploadSection.innerHTML=`
@@ -872,9 +914,9 @@ function buildLevelGrid(){
             try{
               const data=JSON.parse(ev.target.result);
               if(data.objects&&Array.isArray(data.objects)){
-                addCustomLevel(data);
+                addCustomLevel(data,'draft');
                 buildLevelGrid();
-                showToastInGame('✅ 上传成功: '+(data.name||'自定义关卡'));
+                showToastInGame('✅ 已上传为草稿: '+(data.name||'自定义关卡')+'，请在待发布区确认发布');
               }else{
                 alert('无效的关卡数据，请确保JSON包含objects数组');
               }
