@@ -12,11 +12,11 @@ body { background: #0a0e1a; color: #fff; font-family: 'Segoe UI', 'Microsoft YaH
 .toolbar {
   min-height: 44px; background: #111827; border-bottom: 1px solid #1e293b;
   display: flex; align-items: center; padding: 0 10px; gap: 4px; z-index: 100;
-  flex-wrap: wrap;
+  flex-wrap: wrap; position: relative; overflow: visible;
 }
 .toolbar-brand { color: #0ff; font-size: 14px; font-weight: bold; letter-spacing: 1px; margin-right: 8px; white-space: nowrap; }
 .toolbar-brand span { color: #ff8800; font-size: 11px; }
-.tb-group { display: flex; gap: 2px; padding: 0 4px; border-left: 1px solid #1e293b; }
+.tb-group { display: flex; gap: 2px; padding: 0 4px; border-left: 1px solid #1e293b; overflow: visible; }
 .tb-btn {
   padding: 4px 8px; font-size: 12px; color: #94a3b8; background: transparent;
   border: 1px solid transparent; border-radius: 6px; cursor: pointer; transition: all 0.2s;
@@ -62,10 +62,10 @@ body { display: flex; flex-direction: column; }
 /* ===== 左侧面板 ===== */
 .left-panel {
   width: 240px; min-width: 140px; max-width: 400px; background: #111827;
-  border-right: 1px solid #1e293b; display: flex; flex-direction: column; overflow: hidden;
+  border-right: 1px solid #1e293b; display: flex; flex-direction: column; overflow: visible;
   flex-shrink: 0;
 }
-.panel-section { border-bottom: 1px solid #1e293b; }
+.panel-section { border-bottom: 1px solid #1e293b; position: relative; overflow: visible; }
 .panel-header {
   padding: 8px 10px; font-size: 12px; color: #94a3b8; letter-spacing: 1px;
   background: #0f172a; display: flex; align-items: center; justify-content: space-between;
@@ -146,7 +146,7 @@ body.resizing * { cursor: col-resize !important; }
 /* ===== 右侧面板 ===== */
 .right-panel {
   width: 240px; min-width: 140px; max-width: 400px; background: #111827;
-  border-left: 1px solid #1e293b; display: flex; flex-direction: column; overflow-y: auto;
+  border-left: 1px solid #1e293b; display: flex; flex-direction: column; overflow: visible;
   flex-shrink: 0;
 }
 
@@ -329,45 +329,55 @@ body.resizing * { cursor: col-resize !important; }
 }
 
 /* ===== 自定义Tooltip ===== */
-.tooltip-wrap { position: relative; }
 [data-tip] { position: relative; }
+/* 默认：向下弹出（适合顶部工具栏） */
 [data-tip]::after {
   content: attr(data-tip);
-  position: absolute; bottom: calc(100% + 8px); left: 50%;
-  transform: translateX(-50%); white-space: nowrap;
+  position: absolute; top: calc(100% + 8px); left: 50%;
+  transform: translateX(-50%); white-space: pre-line;
   background: #0f172a; color: #e2e8f0; font-size: 12px; font-weight: normal;
-  padding: 6px 12px; border-radius: 8px;
-  border: 1px solid rgba(0,255,255,0.25);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5), 0 0 8px rgba(0,255,255,0.08);
-  pointer-events: none; opacity: 0; transition: opacity 0.18s, transform 0.18s;
-  z-index: 900; letter-spacing: 0.5px; line-height: 1.4;
-  max-width: 260px; white-space: pre-line; text-align: center;
+  padding: 8px 14px; border-radius: 8px;
+  border: 1px solid rgba(0,255,255,0.3);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 12px rgba(0,255,255,0.1);
+  pointer-events: none; opacity: 0; transition: opacity 0.15s, transform 0.15s;
+  z-index: 9999; letter-spacing: 0.3px; line-height: 1.5;
+  max-width: 280px; text-align: center;
 }
+/* 箭头：默认向下弹出时箭头在上方 */
 [data-tip]::before {
-  content: ''; position: absolute; bottom: calc(100% + 3px); left: 50%;
+  content: ''; position: absolute; top: calc(100% + 3px); left: 50%;
   transform: translateX(-50%);
-  border: 5px solid transparent; border-top-color: rgba(0,255,255,0.25);
-  pointer-events: none; opacity: 0; transition: opacity 0.18s;
-  z-index: 901;
+  border: 5px solid transparent; border-bottom-color: rgba(0,255,255,0.3);
+  pointer-events: none; opacity: 0; transition: opacity 0.15s;
+  z-index: 10000;
 }
-[data-tip]:hover::after, [data-tip]:hover::before { opacity: 1; }
-[data-tip]:hover::after { transform: translateX(-50%) translateY(-2px); }
-/* 底部tooltip（画布工具按钮） */
-[data-tip-pos="top"]::after { bottom: calc(100% + 8px); top: auto; }
-[data-tip-pos="bottom"]::after { top: calc(100% + 8px); bottom: auto; transform: translateX(-50%); }
+[data-tip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(2px); }
+[data-tip]:hover::before { opacity: 1; }
+
+/* === 向上弹出（用于底部区域的按钮） === */
+[data-tip-pos="top"]::after {
+  top: auto; bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+}
+[data-tip-pos="top"]::before {
+  top: auto; bottom: calc(100% + 3px);
+  border-bottom-color: transparent; border-top-color: rgba(0,255,255,0.3);
+}
+[data-tip-pos="top"]:hover::after { transform: translateX(-50%) translateY(-2px); }
+
+/* === 向下弹出（显式指定，与默认相同） === */
+[data-tip-pos="bottom"]::after { top: calc(100% + 8px); bottom: auto; }
+[data-tip-pos="bottom"]::before { top: calc(100% + 3px); bottom: auto; border-top-color: transparent; border-bottom-color: rgba(0,255,255,0.3); }
 [data-tip-pos="bottom"]:hover::after { transform: translateX(-50%) translateY(2px); }
-[data-tip-pos="bottom"]::before { top: calc(100% + 3px); bottom: auto; border-top-color: transparent; border-bottom-color: rgba(0,255,255,0.25); }
-/* 右侧对齐（防止溢出屏幕） */
+
+/* === 右对齐（防右侧溢出） === */
 [data-tip-align="right"]::after { left: auto; right: 0; transform: translateX(0); }
-[data-tip-align="right"]:hover::after { transform: translateX(0) translateY(-2px); }
+[data-tip-align="right"]:hover::after { transform: translateX(0) translateY(2px); }
+[data-tip-align="right"][data-tip-pos="top"]:hover::after { transform: translateX(0) translateY(-2px); }
+/* === 左对齐（防左侧溢出） === */
 [data-tip-align="left"]::after { left: 0; right: auto; transform: translateX(0); }
-[data-tip-align="left"]:hover::after { transform: translateX(0) translateY(-2px); }
-/* 快捷键高亮 */
-.tip-key {
-  display: inline-block; background: rgba(0,255,255,0.12); color: #0ff;
-  padding: 0 5px; border-radius: 3px; font-size: 10px;
-  border: 1px solid rgba(0,255,255,0.2); margin-left: 4px; font-family: monospace;
-}
+[data-tip-align="left"]:hover::after { transform: translateX(0) translateY(2px); }
+[data-tip-align="left"][data-tip-pos="top"]:hover::after { transform: translateX(0) translateY(-2px); }
 
 /* ==================== 响应式适配 ==================== */
 
@@ -684,8 +694,8 @@ body.resizing * { cursor: col-resize !important; }
       <div class="canvas-info">物体: <span id="objCount">0</span></div>
     </div>
     <div class="canvas-tools">
-      <button class="canvas-tool-btn" id="btnResetView" data-tip="重置画布视图到中心位置&#10;缩放恢复100%" data-tip-align="right">🔄 重置视图</button>
-      <button class="canvas-tool-btn" id="btnFitAll" data-tip="自适应显示全部对象和地图边界&#10;自动调整缩放和位置" data-tip-align="right">📐 适应全部</button>
+      <button class="canvas-tool-btn" id="btnResetView" title="重置画布视图到中心位置，缩放恢复100%">🔄 重置视图</button>
+      <button class="canvas-tool-btn" id="btnFitAll" title="自适应显示全部对象和地图边界，自动调整缩放和位置">📐 适应全部</button>
     </div>
   </div>
 
