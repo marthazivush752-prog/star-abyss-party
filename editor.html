@@ -334,14 +334,13 @@ body.resizing * { cursor: col-resize !important; }
 [data-tip]::after {
   content: attr(data-tip);
   position: absolute; top: calc(100% + 8px); left: 50%;
-  transform: translateX(-50%); white-space: pre-line;
+  transform: translateX(-50%); white-space: nowrap;
   background: #0f172a; color: #e2e8f0; font-size: 12px; font-weight: normal;
-  padding: 8px 14px; border-radius: 8px;
+  padding: 6px 12px; border-radius: 6px;
   border: 1px solid rgba(0,255,255,0.3);
   box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 12px rgba(0,255,255,0.1);
   pointer-events: none; opacity: 0; transition: opacity 0.15s, transform 0.15s;
-  z-index: 9999; letter-spacing: 0.3px; line-height: 1.5;
-  max-width: 280px; text-align: center;
+  z-index: 9999; letter-spacing: 0.3px; line-height: 1;
 }
 /* 箭头：默认向下弹出时箭头在上方 */
 [data-tip]::before {
@@ -354,27 +353,19 @@ body.resizing * { cursor: col-resize !important; }
 [data-tip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(2px); }
 [data-tip]:hover::before { opacity: 1; }
 
-/* === 向上弹出（用于底部区域的按钮） === */
-[data-tip-pos="top"]::after {
-  top: auto; bottom: calc(100% + 8px);
-  transform: translateX(-50%);
-}
-[data-tip-pos="top"]::before {
-  top: auto; bottom: calc(100% + 3px);
-  border-bottom-color: transparent; border-top-color: rgba(0,255,255,0.3);
-}
+/* === 向上弹出 === */
+[data-tip-pos="top"]::after { top: auto; bottom: calc(100% + 8px); }
+[data-tip-pos="top"]::before { top: auto; bottom: calc(100% + 3px); border-bottom-color: transparent; border-top-color: rgba(0,255,255,0.3); }
 [data-tip-pos="top"]:hover::after { transform: translateX(-50%) translateY(-2px); }
-
-/* === 向下弹出（显式指定，与默认相同） === */
+/* === 向下弹出（显式） === */
 [data-tip-pos="bottom"]::after { top: calc(100% + 8px); bottom: auto; }
 [data-tip-pos="bottom"]::before { top: calc(100% + 3px); bottom: auto; border-top-color: transparent; border-bottom-color: rgba(0,255,255,0.3); }
 [data-tip-pos="bottom"]:hover::after { transform: translateX(-50%) translateY(2px); }
-
-/* === 右对齐（防右侧溢出） === */
+/* === 右对齐 === */
 [data-tip-align="right"]::after { left: auto; right: 0; transform: translateX(0); }
 [data-tip-align="right"]:hover::after { transform: translateX(0) translateY(2px); }
 [data-tip-align="right"][data-tip-pos="top"]:hover::after { transform: translateX(0) translateY(-2px); }
-/* === 左对齐（防左侧溢出） === */
+/* === 左对齐 === */
 [data-tip-align="left"]::after { left: 0; right: auto; transform: translateX(0); }
 [data-tip-align="left"]:hover::after { transform: translateX(0) translateY(2px); }
 [data-tip-align="left"][data-tip-pos="top"]:hover::after { transform: translateX(0) translateY(-2px); }
@@ -607,32 +598,32 @@ body.resizing * { cursor: col-resize !important; }
 <div class="toolbar">
   <div class="toolbar-brand">星渊编辑器 <span>v1.2</span></div>
   <div class="tb-group">
-    <button class="tb-btn success" id="btnNewMap" data-tip="创建一个全新的关卡地图&#10;可选空白/默认/竞技场/迷宫模板&#10;快捷键 Ctrl+N">📄 新建</button>
-    <button class="tb-btn" id="btnSave" data-tip="保存当前关卡到本地浏览器&#10;自动同步到游戏关卡列表&#10;快捷键 Ctrl+S">💾 保存</button>
-    <button class="tb-btn" id="btnLoad" data-tip="从本地浏览器加载已保存的关卡&#10;输入关卡名称即可恢复编辑">📂 加载</button>
+    <button class="tb-btn success" id="btnNewMap" data-tip="新建关卡地图 · Ctrl+N">📄 新建</button>
+    <button class="tb-btn" id="btnSave" data-tip="保存并同步到关卡列表 · Ctrl+S">💾 保存</button>
+    <button class="tb-btn" id="btnLoad" data-tip="加载本地已保存的关卡">📂 加载</button>
   </div>
   <div class="tb-group">
-    <button class="tb-btn active" id="toolSelect" data-tip="选择工具 — 点击选中对象&#10;查看/修改属性、复制、删除&#10;快捷键 V">🔍</button>
-    <button class="tb-btn" id="toolPlace" data-tip="放置工具 — 在画布上放置新对象&#10;先在左侧选择物体类型再点击画布&#10;快捷键 P">📌</button>
-    <button class="tb-btn" id="toolMove" data-tip="移动工具 — 拖拽移动已有对象&#10;点击对象后按住拖动即可&#10;快捷键 M">✋</button>
-    <button class="tb-btn" id="toolErase" data-tip="删除工具 — 点击直接删除对象&#10;也可选中后按 Delete 键删除&#10;快捷键 D">🗑️</button>
+    <button class="tb-btn active" id="toolSelect" data-tip="选择工具 · 点击选中对象 · V">🔍</button>
+    <button class="tb-btn" id="toolPlace" data-tip="放置工具 · 点击画布放置 · P">📌</button>
+    <button class="tb-btn" id="toolMove" data-tip="移动工具 · 拖拽移动对象 · M">✋</button>
+    <button class="tb-btn" id="toolErase" data-tip="删除工具 · 点击删除对象 · D">🗑️</button>
   </div>
   <div class="tb-group">
-    <button class="tb-btn" id="btnUndo" data-tip="撤销上一步操作&#10;最多支持50步撤销&#10;快捷键 Ctrl+Z">↩️</button>
-    <button class="tb-btn" id="btnRedo" data-tip="重做已撤销的操作&#10;快捷键 Ctrl+Y 或 Ctrl+Shift+Z">↪️</button>
+    <button class="tb-btn" id="btnUndo" data-tip="撤销 · 最多50步 · Ctrl+Z">↩️</button>
+    <button class="tb-btn" id="btnRedo" data-tip="重做 · Ctrl+Y">↪️</button>
   </div>
   <div class="tb-group">
-    <button class="tb-btn primary" id="btnPreview3D" data-tip="3D预览 — 以第三人称视角&#10;查看当前关卡的3D效果&#10;鼠标拖拽旋转，滚轮缩放">🎮 3D</button>
-    <button class="tb-btn primary" id="btnTestGame" data-tip="在游戏中测试 — 新开标签页&#10;以真实游戏模式运行当前关卡&#10;体验实际战斗和关卡玩法">▶️ 测试</button>
-    <button class="tb-btn success" id="btnLivePreview" data-tip="实时预览 — 开启后编辑器修改&#10;会自动同步到嵌入式游戏窗口&#10;所见即所得的编辑体验">🔴 实时</button>
+    <button class="tb-btn primary" id="btnPreview3D" data-tip="3D视角预览当前关卡">🎮 3D</button>
+    <button class="tb-btn primary" id="btnTestGame" data-tip="新标签页运行游戏测试关卡">▶️ 测试</button>
+    <button class="tb-btn success" id="btnLivePreview" data-tip="实时预览 · 编辑即时同步">🔴 实时</button>
   </div>
   <div class="tb-spacer"></div>
   <div class="tb-group">
-    <button class="tb-btn success" id="btnSaveToGame" style="color:#ff8800;border-color:rgba(255,136,0,0.5);background:rgba(255,136,0,0.1);" data-tip="保存为草稿 — 将当前关卡存入&#10;关卡管理系统（草稿状态）&#10;后续可测试发布或正式发布" data-tip-align="right">📥 草稿</button>
-    <button class="tb-btn primary" id="btnLevelManager" data-tip="关卡管理台 — 管理所有关卡&#10;支持编辑/发布/下线/删除等操作&#10;查看已上线/测试中/草稿关卡" data-tip-align="right">📋 管理台</button>
-    <button class="tb-btn" id="btnExport" data-tip="导出JSON — 将当前关卡数据&#10;导出为JSON格式，可复制或下载&#10;用于分享或备份关卡" data-tip-align="right">💾</button>
-    <button class="tb-btn" id="btnImport" data-tip="导入JSON — 从JSON数据或文件&#10;导入关卡，支持粘贴和文件上传&#10;用于加载他人分享的关卡" data-tip-align="right">📂</button>
-    <button class="tb-btn danger" id="btnClear" data-tip="清空画布 — 删除所有对象&#10;需要二次确认，操作可撤销" data-tip-align="right">🗑</button>
+    <button class="tb-btn success" id="btnSaveToGame" style="color:#ff8800;border-color:rgba(255,136,0,0.5);background:rgba(255,136,0,0.1);" data-tip="保存为草稿 · 存入关卡管理系统" data-tip-align="right">📥 草稿</button>
+    <button class="tb-btn primary" id="btnLevelManager" data-tip="管理所有关卡 · 发布/下线/删除" data-tip-align="right">📋 管理台</button>
+    <button class="tb-btn" id="btnExport" data-tip="导出关卡为JSON · 复制或下载" data-tip-align="right">💾</button>
+    <button class="tb-btn" id="btnImport" data-tip="从JSON或文件导入关卡" data-tip-align="right">📂</button>
+    <button class="tb-btn danger" id="btnClear" data-tip="清空所有对象 · 可撤销" data-tip-align="right">🗑</button>
   </div>
   <div class="tb-info" id="statusInfo">就绪</div>
 </div>
@@ -641,13 +632,13 @@ body.resizing * { cursor: col-resize !important; }
   <!-- 左侧面板 -->
   <div class="left-panel" id="leftPanel">
     <div class="panel-section">
-      <div class="panel-header" id="layerHeader" data-tip="管理各图层的显示/隐藏&#10;点击图层名称可筛选对象" data-tip-pos="bottom" data-tip-align="left">
+      <div class="panel-header" id="layerHeader" data-tip="管理图层显示/隐藏 · 点击筛选" data-tip-pos="bottom" data-tip-align="left">
         <span>📑 图层</span><span class="arrow">▼</span>
       </div>
       <div class="panel-body" id="layerList"></div>
     </div>
     <div class="panel-section">
-      <div class="panel-header" id="placeHeader" data-tip="选择要放置的物体类型&#10;选中后在画布上点击即可放置" data-tip-pos="bottom" data-tip-align="left">
+      <div class="panel-header" id="placeHeader" data-tip="选择物体类型 · 在画布点击放置" data-tip-pos="bottom" data-tip-align="left">
         <span>🧱 放置物体</span><span class="arrow">▼</span>
       </div>
       <div class="panel-body">
@@ -655,14 +646,14 @@ body.resizing * { cursor: col-resize !important; }
       </div>
     </div>
     <div class="panel-section">
-      <div class="panel-header" id="mapHeader" data-tip="调整地图的基础属性&#10;包括名称、尺寸和网格设置" data-tip-pos="bottom" data-tip-align="left">
+      <div class="panel-header" id="mapHeader" data-tip="调整名称、尺寸和网格设置" data-tip-pos="bottom" data-tip-align="left">
         <span>⚙️ 地图设置</span><span class="arrow">▼</span>
       </div>
       <div class="panel-body">
         <div class="prop-row">
           <span class="prop-label">名称</span>
           <input class="prop-input" type="text" id="mapName" value="新关卡" maxlength="30" title="关卡地图的名称，最多30个字符">
-          <button class="tb-btn" id="btnRenameSave" data-tip="确认重命名&#10;更新已保存的关卡名称" data-tip-pos="bottom" style="padding:4px 8px;font-size:11px;">✏️</button>
+          <button class="tb-btn" id="btnRenameSave" data-tip="确认重命名并同步更新" data-tip-pos="bottom" style="padding:4px 8px;font-size:11px;">✏️</button>
         </div>
         <div id="levelIdInfo" style="font-size:10px;color:#64748b;padding:0 14px 6px;display:none;">ID: <span id="levelIdText">-</span></div>
         <div class="prop-row">
@@ -705,7 +696,7 @@ body.resizing * { cursor: col-resize !important; }
   <!-- 右侧面板 -->
   <div class="right-panel" id="rightPanel">
     <div class="panel-section">
-      <div class="panel-header" id="objListHeader" data-tip="当前画布上所有对象的列表&#10;点击选中，✕号删除" data-tip-pos="bottom" data-tip-align="right">
+      <div class="panel-header" id="objListHeader" data-tip="所有对象列表 · 点击选中" data-tip-pos="bottom" data-tip-align="right">
         <span>📋 对象列表</span><span class="arrow">▼</span>
       </div>
       <div class="panel-body obj-list" id="objectList">
@@ -713,7 +704,7 @@ body.resizing * { cursor: col-resize !important; }
       </div>
     </div>
     <div class="panel-section">
-      <div class="panel-header" id="propsHeader" data-tip="选中对象后在此修改属性&#10;包括位置、尺寸、材质等" data-tip-pos="bottom" data-tip-align="right">
+      <div class="panel-header" id="propsHeader" data-tip="选中对象后修改位置/尺寸/材质" data-tip-pos="bottom" data-tip-align="right">
         <span>🔧 属性</span><span class="arrow">▼</span>
       </div>
       <div class="panel-body" id="propsPanel">
@@ -810,9 +801,9 @@ body.resizing * { cursor: col-resize !important; }
   <div class="modal" style="min-width:560px;max-width:800px;width:80vw;">
     <div class="modal-title">📋 关卡编辑台</div>
     <div class="lm-tabs">
-      <button class="lm-tab active" data-tab="published" data-tip="已正式上线的关卡&#10;所有玩家可见">🟢 已上线</button>
-      <button class="lm-tab" data-tab="testing" data-tip="测试发布的关卡&#10;仅管理员可见">🧪 测试中</button>
-      <button class="lm-tab" data-tab="draft" data-tip="未发布的草稿关卡&#10;仅在编辑器可管理">⚪ 草稿</button>
+      <button class="lm-tab active" data-tab="published" data-tip="已上线 · 所有玩家可见">🟢 已上线</button>
+      <button class="lm-tab" data-tab="testing" data-tip="测试中 · 仅管理员可见">🧪 测试中</button>
+      <button class="lm-tab" data-tab="draft" data-tip="草稿 · 仅编辑器可管理">⚪ 草稿</button>
       <button class="lm-tab" data-tab="all" data-tip="显示所有状态的关卡">📋 全部</button>
     </div>
     <div class="lm-list" id="lmList">
@@ -864,14 +855,14 @@ body.resizing * { cursor: col-resize !important; }
     </div>
     <div class="modal-actions">
       <button class="tb-btn" id="btnPublishCancel" data-tip="取消发布，返回管理台">取消</button>
-      <button class="tb-btn success" id="btnPublishConfirm" style="color:#4ade80;border-color:rgba(74,222,128,0.5);" data-tip="确认发布 — 发布后所有玩家&#10;均可在关卡选择中看到">🚀 确认正式发布</button>
+      <button class="tb-btn success" id="btnPublishConfirm" style="color:#4ade80;border-color:rgba(74,222,128,0.5);" data-tip="发布后所有玩家均可见">🚀 确认正式发布</button>
     </div>
   </div>
 </div>
 
 <!-- 移动端面板切换按钮 -->
-<button class="mobile-panel-toggle left" id="btnToggleLeft" data-tip="打开左侧面板&#10;图层/放置物体/地图设置" data-tip-pos="bottom">📑</button>
-<button class="mobile-panel-toggle right" id="btnToggleRight" data-tip="打开右侧面板&#10;对象列表/属性编辑" data-tip-pos="bottom" data-tip-align="right">📋</button>
+<button class="mobile-panel-toggle left" id="btnToggleLeft" data-tip="左侧面板 · 图层/放置/设置" data-tip-pos="bottom">📑</button>
+<button class="mobile-panel-toggle right" id="btnToggleRight" data-tip="右侧面板 · 对象列表/属性" data-tip-pos="bottom" data-tip-align="right">📋</button>
 
 <!-- 通知 -->
 <div class="toast" id="toast"></div>
@@ -898,25 +889,25 @@ const EDITOR = {
 };
 
 const PLACE_DEFS = [
-  { id: 'wall', layer: 'buildings', icon: '🧱', name: '墙体', tip: '放置墙体建筑\n可调整宽/高/深和材质', hasSize: true, defaults: { w: 10, h: 6, d: 2, material: 'wall' } },
-  { id: 'platform', layer: 'buildings', icon: '⬛', name: '平台', tip: '放置平台/高台\n适合制作多层结构', hasSize: true, defaults: { w: 8, h: 3, d: 8, material: 'accent' } },
-  { id: 'cover', layer: 'buildings', icon: '🪨', name: '掩体', tip: '放置小型掩体\n提供战斗中的遮挡', hasSize: true, defaults: { w: 4, h: 3, d: 4, material: 'wall' } },
-  { id: 'sentinel', layer: 'enemies', icon: '🤖', name: '机械哨兵', tip: '中等难度敌人\n有护盾，远程攻击' },
-  { id: 'alien', layer: 'enemies', icon: '👽', name: '外星小怪', tip: '低难度敌人\n移动快，血量低' },
-  { id: 'elite', layer: 'enemies', icon: '💀', name: '精英守卫', tip: '高难度精英敌人\n血厚攻高，掉落丰富' },
-  { id: 'weapon_laser', layer: 'loot', icon: '🔫', name: '激光步枪', tip: '远程武器拾取点\n精准型自动步枪', lootType: 'weapon', lootId: 'laser_rifle' },
-  { id: 'weapon_shotgun', layer: 'loot', icon: '💥', name: '电磁霰弹', tip: '近战武器拾取点\n近距离高伤害散射', lootType: 'weapon', lootId: 'em_shotgun' },
-  { id: 'weapon_blade', layer: 'loot', icon: '⚔️', name: '能量刃', tip: '近战武器拾取点\n超高伤害近身武器', lootType: 'weapon', lootId: 'energy_blade' },
-  { id: 'item_heal', layer: 'loot', icon: '💊', name: '治疗包', tip: '消耗品拾取点\n使用后恢复大量生命', lootType: 'item', lootId: 'heal' },
-  { id: 'item_shield', layer: 'loot', icon: '🛡️', name: '能量盾', tip: '消耗品拾取点\n使用后获得临时护盾', lootType: 'item', lootId: 'shield' },
-  { id: 'item_speed', layer: 'loot', icon: '⚡', name: '加速装置', tip: '消耗品拾取点\n使用后移动速度提升', lootType: 'item', lootId: 'speed' },
-  { id: 'item_grenade', layer: 'loot', icon: '💣', name: '引力手雷', tip: '消耗品拾取点\n投掷后产生范围爆炸', lootType: 'item', lootId: 'grenade' },
-  { id: 'item_damage', layer: 'loot', icon: '🔥', name: '伤害增幅', tip: '消耗品拾取点\n使用后攻击伤害提升', lootType: 'item', lootId: 'damage_up' },
-  { id: 'item_stealth', layer: 'loot', icon: '👻', name: '隐身装置', tip: '消耗品拾取点\n使用后短暂隐身', lootType: 'item', lootId: 'stealth' },
-  { id: 'fragment', layer: 'loot', icon: '💎', name: '能量碎片', tip: '收集品拾取点\n关卡过关需收集碎片', lootType: 'fragment' },
-  { id: 'spawn_point', layer: 'spawn', icon: '🚀', name: '出生点', tip: '玩家出生/重生位置\n建议放置2~4个' },
-  { id: 'evac_point', layer: 'evac', icon: '🌀', name: '撤离点', tip: '关卡撤离区域\n玩家到达此处可通关' },
-  { id: 'light', layer: 'lights', icon: '💡', name: '装饰灯', tip: '场景装饰光源\n可自定义颜色', hasColor: true, defaults: { lightColor: '#00ffff' } },
+  { id: 'wall', layer: 'buildings', icon: '🧱', name: '墙体', tip: '墙体建筑 · 可调宽高深和材质', hasSize: true, defaults: { w: 10, h: 6, d: 2, material: 'wall' } },
+  { id: 'platform', layer: 'buildings', icon: '⬛', name: '平台', tip: '平台高台 · 适合多层结构', hasSize: true, defaults: { w: 8, h: 3, d: 8, material: 'accent' } },
+  { id: 'cover', layer: 'buildings', icon: '🪨', name: '掩体', tip: '小型掩体 · 提供战斗遮挡', hasSize: true, defaults: { w: 4, h: 3, d: 4, material: 'wall' } },
+  { id: 'sentinel', layer: 'enemies', icon: '🤖', name: '机械哨兵', tip: '中等敌人 · 有护盾远程攻击' },
+  { id: 'alien', layer: 'enemies', icon: '👽', name: '外星小怪', tip: '低难度敌人 · 移动快血量低' },
+  { id: 'elite', layer: 'enemies', icon: '💀', name: '精英守卫', tip: '高难度精英 · 血厚攻高掉落丰富' },
+  { id: 'weapon_laser', layer: 'loot', icon: '🔫', name: '激光步枪', tip: '远程武器 · 精准型自动步枪', lootType: 'weapon', lootId: 'laser_rifle' },
+  { id: 'weapon_shotgun', layer: 'loot', icon: '💥', name: '电磁霰弹', tip: '近战武器 · 近距离高伤散射', lootType: 'weapon', lootId: 'em_shotgun' },
+  { id: 'weapon_blade', layer: 'loot', icon: '⚔️', name: '能量刃', tip: '近战武器 · 超高伤害近身', lootType: 'weapon', lootId: 'energy_blade' },
+  { id: 'item_heal', layer: 'loot', icon: '💊', name: '治疗包', tip: '消耗品 · 使用后恢复生命', lootType: 'item', lootId: 'heal' },
+  { id: 'item_shield', layer: 'loot', icon: '🛡️', name: '能量盾', tip: '消耗品 · 使用后获得护盾', lootType: 'item', lootId: 'shield' },
+  { id: 'item_speed', layer: 'loot', icon: '⚡', name: '加速装置', tip: '消耗品 · 使用后移速提升', lootType: 'item', lootId: 'speed' },
+  { id: 'item_grenade', layer: 'loot', icon: '💣', name: '引力手雷', tip: '消耗品 · 投掷后范围爆炸', lootType: 'item', lootId: 'grenade' },
+  { id: 'item_damage', layer: 'loot', icon: '🔥', name: '伤害增幅', tip: '消耗品 · 使用后攻击提升', lootType: 'item', lootId: 'damage_up' },
+  { id: 'item_stealth', layer: 'loot', icon: '👻', name: '隐身装置', tip: '消耗品 · 使用后短暂隐身', lootType: 'item', lootId: 'stealth' },
+  { id: 'fragment', layer: 'loot', icon: '💎', name: '能量碎片', tip: '收集品 · 过关需收集碎片', lootType: 'fragment' },
+  { id: 'spawn_point', layer: 'spawn', icon: '🚀', name: '出生点', tip: '玩家出生/重生位置 · 建议2~4个' },
+  { id: 'evac_point', layer: 'evac', icon: '🌀', name: '撤离点', tip: '关卡撤离区域 · 到达即可通关' },
+  { id: 'light', layer: 'lights', icon: '💡', name: '装饰灯', tip: '装饰光源 · 可自定义颜色', hasColor: true, defaults: { lightColor: '#00ffff' } },
 ];
 
 const canvas = document.getElementById('editorCanvas');
